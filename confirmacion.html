@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smachno-Go — Solicitud enviada</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <a href="index.html" class="topbar-logo">Smachno<span>-Go</span></a>
+</div>
+<div class="ornament"></div>
+
+<div class="main" id="confirm-content">
+  <div class="loading">Cargando...</div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script>
+const data = JSON.parse(sessionStorage.getItem('sg_confirmacion') || 'null');
+if (!data) { window.location.href = 'index.html'; }
+
+const MONTHS_ES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+function formatFecha(str) {
+  const d = new Date(str + 'T12:00:00');
+  return `${d.getDate()} de ${MONTHS_ES[d.getMonth()]} de ${d.getFullYear()}`;
+}
+
+const anticipo   = Math.round(data.precio * data.lugares * 0.5);
+const total      = data.precio * data.lugares;
+const resto      = total - anticipo;
+const fechaEvStr = formatFecha(data.event_fecha);
+
+const ev_date  = new Date(data.event_fecha + 'T12:00:00');
+const dow      = ev_date.getDay();
+const daysToWed = ((3 - dow + 7) % 7) || 7;
+const deadline  = new Date(ev_date);
+deadline.setDate(ev_date.getDate() - daysToWed);
+const deadlineStr = `${deadline.getDate()} de ${MONTHS_ES[deadline.getMonth()]}`;
+
+document.getElementById('confirm-content').innerHTML = `
+  <div class="confirm-block">
+    <div class="confirm-circle">
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+        <circle cx="13" cy="13" r="12" stroke="#6B7F5E" stroke-width="1"/>
+        <polyline points="7,13 11,17 19,9" stroke="#6B7F5E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h1 class="confirm-title">¡Solicitud <em>enviada</em>!</h1>
+    <p class="confirm-sub">Gracias, ${data.nombre}. Te esperamos en la mesa.<br>Los detalles fueron enviados a tu correo.</p>
+  </div>
+
+  <div class="booking-card">
+    <div class="booking-card-header">
+      <span class="booking-ref-label">Número de solicitud</span>
+      <span class="booking-ref-num">${data.numero_reserva}</span>
+    </div>
+    <div class="detail-row"><span class="detail-label">Velada</span><span class="detail-value">${data.event_nombre}</span></div>
+    <div class="detail-row"><span class="detail-label">Fecha y hora</span><span class="detail-value">${fechaEvStr} · ${data.event_hora}</span></div>
+    <div class="detail-row"><span class="detail-label">Nombre</span><span class="detail-value">${data.nombre} ${data.apellido}</span></div>
+    <div class="detail-row"><span class="detail-label">Lugares</span><span class="detail-value">${data.lugares} persona${data.lugares !== 1 ? 's' : ''}</span></div>
+    <div class="detail-row"><span class="detail-label">Estado</span><span class="detail-value accent">Pendiente de pago</span></div>
+  </div>
+
+  <div class="ornament-divider"><span>◆ ◇ ◆</span></div>
+
+  <div class="payment-card">
+    <div class="section-label" style="margin-bottom:10px">Pago anticipado</div>
+    <div class="payment-amount">$${anticipo.toLocaleString('es-AR')} <small>ARS</small></div>
+    <div class="payment-note">
+      Anticipado (50%) por ${data.lugares} persona${data.lugares !== 1 ? 's' : ''}.<br>
+      El resto — $${resto.toLocaleString('es-AR')} ARS — se abona en la velada.
+    </div>
+    <div class="deadline-box">
+      ⚑ &nbsp;Realizá el pago antes del <strong>${deadlineStr} a las 12:00 hs</strong> (miércoles previo a la velada) para confirmar tu lugar.
+    </div>
+    <div class="transfer-block">
+      <div class="transfer-label">Datos de transferencia</div>
+      <div class="transfer-row"><span class="transfer-key">Banco</span><span class="transfer-val">${data.banco}</span></div>
+      <div class="transfer-row"><span class="transfer-key">Nombre</span><span class="transfer-val">${data.nombre_cuenta}</span></div>
+      <div class="transfer-row"><span class="transfer-key">CVU</span><span class="transfer-val" style="font-size:12px;word-break:break-all">${data.cvu}</span></div>
+      <div class="transfer-row"><span class="transfer-key">Alias</span><span class="transfer-val">${data.alias}</span></div>
+      <div class="transfer-row"><span class="transfer-key">Concepto</span><span class="transfer-val">${data.numero_reserva}</span></div>
+    </div>
+  </div>
+
+  <div class="info-row">
+    <div class="info-icon">
+      <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+        <rect x=".5" y="2.5" width="14" height="10" rx="2" stroke="#6B7F5E" stroke-width="1"/>
+        <polyline points=".5,3.5 7.5,8.5 14.5,3.5" stroke="#6B7F5E" stroke-width="1" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div>Confirmación enviada a <strong>${data.email}</strong><br><span style="font-size:12px;color:var(--muted)">¿No lo recibiste? Revisá la carpeta de spam.</span></div>
+  </div>
+
+  <div class="info-row">
+    <div class="info-icon">
+      <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+        <path d="M7.5 1C4.19 1 1.5 3.69 1.5 7c0 1.06.29 2.05.8 2.9L1.5 13.5l3.66-.79A6.44 6.44 0 007.5 13C10.81 13 13.5 10.31 13.5 7S10.81 1 7.5 1z" stroke="#6B7F5E" stroke-width="1" fill="none"/>
+      </svg>
+    </div>
+    <div>Para cancelar o consultar, escribinos por WhatsApp.<br><span style="font-size:12px;color:var(--muted)">Indicá tu número de solicitud: <strong>${data.numero_reserva}</strong></span></div>
+  </div>
+
+  <a href="index.html" class="btn-outline" style="display:block;text-align:center;margin-top:8px;text-decoration:none">Volver al inicio</a>
+`;
+</script>
+</body>
+</html>

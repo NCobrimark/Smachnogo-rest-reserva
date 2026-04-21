@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smachno-Go — Plato</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .dish-hero{background:var(--dark);padding:24px 20px 28px}
+    .photo-gallery{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+    .photo-slot-empty{aspect-ratio:4/3;border-radius:10px;background:var(--border-2);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--muted)}
+    .photo-img{aspect-ratio:4/3;border-radius:10px;object-fit:cover;width:100%}
+    .story-card{background:var(--cream-2);border-radius:12px;border:.5px solid var(--border);padding:18px;margin-bottom:14px}
+    .story-text{font-size:14px;line-height:1.8;color:#3A3028}
+    .pull-quote{border-left:2px solid var(--terracota);padding-left:14px;margin:14px 0;font-family:'Cormorant Garamond',serif;font-size:18px;font-style:italic;color:var(--dark);line-height:1.4}
+    .ing-list{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+    .ing-chip{font-size:12px;padding:4px 10px;border-radius:20px;background:var(--cream);border:.5px solid var(--border);color:var(--dark)}
+    .origin-card{background:var(--dark);border-radius:12px;padding:16px 18px;margin-bottom:16px}
+    .origin-label{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--terracota);margin-bottom:6px;font-weight:500}
+    .origin-text{font-size:13px;color:var(--cream);opacity:.72;line-height:1.65}
+
+    /* Admin edit overlay */
+    .admin-bar{background:#FFF3E0;border-bottom:.5px solid #FAC775;padding:9px 18px;display:flex;align-items:center;justify-content:space-between}
+    .admin-bar-text{font-size:12px;color:#633806;display:flex;align-items:center;gap:7px}
+    .admin-dot{width:7px;height:7px;border-radius:50%;background:var(--terracota)}
+    .edit-field{border:1px dashed var(--terracota);border-radius:6px;padding:4px 8px;background:rgba(196,98,45,.05);outline:none;width:100%;font-family:'Inter',sans-serif;font-size:14px;color:var(--dark);line-height:1.7}
+    .edit-field:focus{background:rgba(196,98,45,.08)}
+    .edit-label{font-size:11px;color:var(--terracota);margin-bottom:4px;margin-top:10px;display:block}
+    .photo-upload{aspect-ratio:4/3;border-radius:10px;border:1.5px dashed var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;gap:5px;background:var(--cream)}
+    .photo-upload:hover{border-color:var(--terracota)}
+    .photo-upload span{font-size:12px;color:var(--muted)}
+  </style>
+</head>
+<body>
+
+<div class="topbar" id="topbar">
+  <a id="back-link" href="#" class="topbar-back">←</a>
+  <a href="index.html" class="topbar-logo">Smachno<span>-Go</span></a>
+  <div style="width:24px"></div>
+</div>
+<div class="ornament"></div>
+
+<div id="admin-bar" class="admin-bar hidden">
+  <div class="admin-bar-text"><div class="admin-dot"></div>Modo edición — los cambios son sólo para vos</div>
+  <button class="btn-primary" style="width:auto;height:34px;padding:0 16px;font-size:13px" id="btn-save">Guardar</button>
+</div>
+
+<div id="dish-hero" class="dish-hero">
+  <div class="loading" style="color:#F5F0E8;opacity:.5">Cargando...</div>
+</div>
+
+<div class="main" id="main-content" style="display:none">
+
+  <div id="photo-section" style="margin-bottom:16px"></div>
+
+  <div class="story-card" id="story-section"></div>
+
+  <div class="story-card" id="ing-section" style="margin-bottom:14px"></div>
+
+  <div id="origin-section"></div>
+
+  <a id="back-btn-bottom" href="#" class="btn-outline" style="display:block;text-align:center;text-decoration:none">← Volver a la velada</a>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script>
+const params  = new URLSearchParams(window.location.search);
+const eventId = params.get('event');
+const platoNombre = decodeURIComponent(params.get('plato') || '');
+const isAdmin = sessionStorage.getItem('sg_admin') === '1';
+
+const backUrl = eventId ? `evento.html?id=${eventId}` : 'index.html';
+document.getElementById('back-link').href = backUrl;
+document.getElementById('back-btn-bottom').href = backUrl;
+
+if (isAdmin) document.getElementById('admin-bar').classList.remove('hidden');
+
+let platoData = null;
+let platoRef  = null;
+
+function renderViewMode(p) {
+  document.getElementById('dish-hero').innerHTML = `
+    <div class="hero-tag">Plato de la velada</div>
+    <h1 class="hero-title">${p.nombre}</h1>
+    <div class="hero-meta"><span>${p.descripcion_corta || ''}</span></div>
+  `;
+
+  const fotos = p.fotos || [];
+  let photoHtml = '';
+  if (fotos.length) {
+    photoHtml = `<div class="photo-gallery">` +
+      fotos.map(url => `<img class="photo-img" src="${url}" alt="${p.nombre}">`).join('') +
+      `</div>`;
+  }
+  document.getElementById('photo-section').innerHTML = photoHtml;
+
+  document.getElementById('story-section').innerHTML = `
+    <div class="section-label" style="margin-bottom:10px">Sobre el plato</div>
+    ${p.descripcion ? `<p class="story-text">${p.descripcion.replace(/\n/g,'<br>')}</p>` : ''}
+    ${p.cita ? `<div class="pull-quote">"${p.cita}"</div>` : ''}
+  `;
+
+  if (p.ingredientes && p.ingredientes.length) {
+    document.getElementById('ing-section').innerHTML = `
+      <div class="section-label" style="margin-bottom:8px">Ingredientes</div>
+      <div class="ing-list">${p.ingredientes.map(i => `<span class="ing-chip">${i}</span>`).join('')}</div>
+    `;
+  } else {
+    document.getElementById('ing-section').innerHTML = '';
+  }
+
+  if (p.origen) {
+    document.getElementById('origin-section').innerHTML = `
+      <div class="origin-card" style="margin-bottom:16px">
+        <div class="origin-label">Origen de la receta</div>
+        <div class="origin-text">${p.origen}</div>
+      </div>
+    `;
+  }
+
+  document.title = `Smachno-Go — ${p.nombre}`;
+  document.getElementById('main-content').style.display = 'block';
+}
+
+function renderEditMode(p) {
+  document.getElementById('dish-hero').innerHTML = `
+    <div class="hero-tag">Plato de la velada</div>
+    <h1 class="hero-title">${p.nombre}</h1>
+    <div class="hero-meta"><span>${p.descripcion_corta || ''}</span></div>
+  `;
+
+  document.getElementById('photo-section').innerHTML = `
+    <div class="section-label" style="margin-bottom:8px">Fotos del plato</div>
+    <div class="photo-gallery">
+      <div class="photo-upload" onclick="alert('Carga de fotos disponible próximamente')">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="1" y="3" width="20" height="16" rx="3" stroke="#7A6E60" stroke-width="1.2"/><circle cx="11" cy="11" r="4" stroke="#7A6E60" stroke-width="1.2"/></svg>
+        <span>+ foto principal</span>
+      </div>
+      <div class="photo-upload" onclick="alert('Carga de fotos disponible próximamente')">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="1" y="3" width="20" height="16" rx="3" stroke="#7A6E60" stroke-width="1.2"/><circle cx="11" cy="11" r="4" stroke="#7A6E60" stroke-width="1.2"/></svg>
+        <span>+ foto extra</span>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('story-section').innerHTML = `
+    <div class="section-label" style="margin-bottom:10px">Descripción del plato</div>
+    <span class="edit-label">Subtítulo corto</span>
+    <input class="edit-field" id="e-sub" value="${p.descripcion_corta || ''}">
+    <span class="edit-label">Texto descriptivo</span>
+    <textarea class="edit-field" id="e-desc" rows="5">${p.descripcion || ''}</textarea>
+    <span class="edit-label">Cita (opcional)</span>
+    <input class="edit-field" id="e-cita" value="${p.cita || ''}">
+    <span class="edit-label">Origen de la receta (opcional)</span>
+    <input class="edit-field" id="e-origen" value="${p.origen || ''}">
+  `;
+
+  const ings = (p.ingredientes || []).join(', ');
+  document.getElementById('ing-section').innerHTML = `
+    <div class="section-label" style="margin-bottom:8px">Ingredientes <span style="font-weight:400;color:var(--muted)">(separados por coma)</span></div>
+    <input class="edit-field" id="e-ings" value="${ings}" placeholder="Hongos blancos, Crema de leche, Cebolla">
+  `;
+
+  document.getElementById('main-content').style.display = 'block';
+}
+
+document.getElementById('btn-save').onclick = async () => {
+  if (!platoRef) return;
+  const updates = {
+    descripcion_corta: document.getElementById('e-sub')?.value.trim() || '',
+    descripcion:       document.getElementById('e-desc')?.value.trim() || '',
+    cita:              document.getElementById('e-cita')?.value.trim() || '',
+    origen:            document.getElementById('e-origen')?.value.trim() || '',
+    ingredientes: (document.getElementById('e-ings')?.value || '')
+      .split(',').map(s => s.trim()).filter(Boolean),
+  };
+  try {
+    await platoRef.update(updates);
+    alert('¡Guardado!');
+  } catch(e) {
+    alert('Error al guardar: ' + e.message);
+  }
+};
+
+if (eventId && platoNombre) {
+  platoRef = db.ref(`events/${eventId}/menu`);
+  platoRef.once('value', snap => {
+    const menu = snap.val() || {};
+    let found = null;
+    ['primera_ronda','segunda_ronda','postres'].forEach(ronda => {
+      if (!found && menu[ronda]) {
+        const idx = (menu[ronda] || []).findIndex(p => p.nombre === platoNombre);
+        if (idx >= 0) {
+          found = menu[ronda][idx];
+          platoRef = db.ref(`events/${eventId}/menu/${ronda}/${idx}`);
+        }
+      }
+    });
+    if (!found) found = { nombre: platoNombre };
+    platoData = found;
+    isAdmin ? renderEditMode(found) : renderViewMode(found);
+  });
+} else {
+  document.getElementById('dish-hero').innerHTML = '<div class="loading" style="color:#F5F0E8;opacity:.5">Plato no encontrado.</div>';
+}
+</script>
+</body>
+</html>

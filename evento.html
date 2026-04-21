@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smachno-Go — Velada</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <a href="index.html" class="topbar-back">←</a>
+  <a href="index.html" class="topbar-logo">Smachno<span>-Go</span></a>
+  <div style="width:24px"></div>
+</div>
+<div class="ornament"></div>
+
+<div id="hero-section" class="hero">
+  <div class="loading" style="color:#F5F0E8;opacity:.5">Cargando...</div>
+</div>
+
+<div class="main" id="main-content" style="display:none">
+
+  <div class="section-label">Menú de la velada</div>
+  <div class="card" id="menu-card"></div>
+
+  <div class="price-row" id="price-row"></div>
+
+  <div class="section-label">Hacé tu solicitud</div>
+  <div class="form-card">
+    <div class="form-title">Tus datos</div>
+    <div class="form-row-2">
+      <div class="form-group">
+        <label class="form-label">Nombre</label>
+        <input class="form-input" id="f-nombre" placeholder="Iván">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Apellido</label>
+        <input class="form-input" id="f-apellido" placeholder="Franco">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Correo electrónico</label>
+      <input class="form-input" id="f-email" type="email" placeholder="ivan@ejemplo.com">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Teléfono (WhatsApp)</label>
+      <input class="form-input" id="f-tel" type="tel" placeholder="+54 9 351 000 0000">
+    </div>
+    <div class="seats-row">
+      <div>
+        <div class="form-label">Cantidad de lugares</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px" id="seats-hint"></div>
+      </div>
+      <div class="seats-control">
+        <button class="seat-btn" onclick="changeSeat(-1)">−</button>
+        <div class="seat-count" id="seat-count">1</div>
+        <button class="seat-btn" onclick="changeSeat(1)">+</button>
+      </div>
+    </div>
+    <button class="btn-primary" id="btn-submit">Enviar solicitud</button>
+    <p class="note">
+      Esto es una <strong>solicitud</strong>, no una reserva confirmada.<br>
+      El lugar se reserva al confirmar el pago anticipado — los datos de transferencia llegarán a tu correo.
+    </p>
+  </div>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script>
+const params  = new URLSearchParams(window.location.search);
+const eventId = params.get('id');
+if (!eventId) window.location.href = 'index.html';
+
+const MONTHS_ES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const DAYS_ES   = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+
+let maxSeats = 1;
+let currentSeats = 1;
+let eventData = null;
+
+function changeSeat(delta) {
+  currentSeats = Math.max(1, Math.min(maxSeats, currentSeats + delta));
+  document.getElementById('seat-count').textContent = currentSeats;
+}
+
+function renderHero(ev) {
+  const fecha = new Date(ev.fecha + 'T12:00:00');
+  const dia   = fecha.getDate();
+  const mes   = MONTHS_ES[fecha.getMonth()];
+  const anio  = fecha.getFullYear();
+  const dow   = DAYS_ES[fecha.getDay()];
+  const confirmados = ev.solicitudes_confirmadas || 0;
+  const pct   = Math.round((confirmados / ev.lugares) * 100);
+
+  document.getElementById('hero-section').innerHTML = `
+    <div class="hero-tag">${dow} ${dia} de ${mes} de ${anio}</div>
+    <h1 class="hero-title">${ev.nombre}</h1>
+    <div class="hero-meta">
+      <span>◷ ${ev.hora}</span>
+      <span>◎ ${ev.lugares} comensales</span>
+      <span>◈ 3 tiempos</span>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-labels">
+        <span>${confirmados} de ${ev.lugares} lugares ocupados</span>
+        <span>${pct}%</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+    </div>
+  `;
+}
+
+function renderMenu(menu) {
+  const card = document.getElementById('menu-card');
+  if (!menu) { card.innerHTML = '<div style="padding:16px;color:var(--muted)">Menú próximamente</div>'; return; }
+
+  const sections = [
+    { key: 'primera_ronda', label: 'Primera ronda' },
+    { key: 'segunda_ronda', label: 'Segunda ronda' },
+    { key: 'postres',       label: 'Postres' },
+  ];
+
+  card.innerHTML = sections.map(s => {
+    const platos = menu[s.key] || [];
+    if (!platos.length) return '';
+    return `
+      <div class="course-block">
+        <div class="course-label">${s.label}</div>
+        ${platos.map(p => `
+          <div class="dish-row">
+            <div>
+              <div class="dish-name">${p.nombre}</div>
+              ${p.descripcion_corta ? `<div class="dish-desc">${p.descripcion_corta}</div>` : ''}
+            </div>
+            ${p.instagram_url
+              ? `<a class="dish-link" href="${p.instagram_url}" target="_blank">▶ Instagram</a>`
+              : `<a class="dish-link" href="plato.html?event=${eventId}&plato=${encodeURIComponent(p.nombre)}">▶ Ver plato</a>`
+            }
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }).join('');
+}
+
+function renderPrice(ev) {
+  const libre = ev.lugares - (ev.solicitudes_confirmadas || 0);
+  const badgeClass = libre <= 0 ? 'badge-red' : (libre <= 2 ? 'badge-amber' : 'badge-green');
+  const badgeText  = libre <= 0 ? 'Sin lugares' : `${libre} lugar${libre !== 1 ? 'es' : ''}`;
+
+  document.getElementById('price-row').innerHTML = `
+    <div>
+      <div class="price-amount">$${Number(ev.precio).toLocaleString('es-AR')} <small>ARS / persona</small></div>
+      <div class="price-sub">50% anticipado · resto en la velada</div>
+    </div>
+    <span class="badge ${badgeClass}">${badgeText}</span>
+  `;
+
+  maxSeats = Math.max(0, libre);
+  document.getElementById('seats-hint').textContent = `Máximo ${maxSeats} disponible${maxSeats !== 1 ? 's' : ''}`;
+  if (maxSeats === 0) {
+    document.getElementById('btn-submit').disabled = true;
+    document.getElementById('btn-submit').style.opacity = '.4';
+    document.getElementById('btn-submit').textContent = 'Sin lugares disponibles';
+  }
+}
+
+function generateNumeroReserva(fecha, counter) {
+  const d = fecha.replace(/-/g,'').slice(2);
+  const n = String(counter).padStart(3,'0');
+  return `SG-${d}-${n}`;
+}
+
+document.getElementById('btn-submit').onclick = async () => {
+  const nombre   = document.getElementById('f-nombre').value.trim();
+  const apellido = document.getElementById('f-apellido').value.trim();
+  const email    = document.getElementById('f-email').value.trim();
+  const tel      = document.getElementById('f-tel').value.trim();
+
+  if (!nombre || !apellido || !email || !tel) {
+    alert('Por favor completá todos los campos.');
+    return;
+  }
+  if (!/\S+@\S+\.\S+/.test(email)) {
+    alert('El correo electrónico no es válido.');
+    return;
+  }
+
+  const btn = document.getElementById('btn-submit');
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+
+  try {
+    const counterRef  = db.ref(`events/${eventId}/solicitudes_counter`);
+    const counterSnap = await counterRef.once('value');
+    const counter     = (counterSnap.val() || 0) + 1;
+    await counterRef.set(counter);
+
+    const numeroReserva = generateNumeroReserva(eventData.fecha, counter);
+
+    const solicitud = {
+      eventId,
+      event_nombre: eventData.nombre,
+      event_fecha:  eventData.fecha,
+      event_hora:   eventData.hora,
+      nombre,
+      apellido,
+      email,
+      telefono: tel,
+      lugares:  currentSeats,
+      estado:   'solicitud',
+      numero_reserva: numeroReserva,
+      fecha_solicitud: Date.now(),
+    };
+
+    await db.ref('solicitudes').push(solicitud);
+
+    sessionStorage.setItem('sg_confirmacion', JSON.stringify({
+      ...solicitud,
+      precio: eventData.precio,
+      banco:  eventData.banco,
+      nombre_cuenta: eventData.nombre_cuenta,
+      cvu:    eventData.cvu,
+      alias:  eventData.alias,
+    }));
+
+    window.location.href = 'confirmacion.html';
+
+  } catch (err) {
+    console.error(err);
+    alert('Hubo un problema. Intentá de nuevo.');
+    btn.disabled = false;
+    btn.textContent = 'Enviar solicitud';
+  }
+};
+
+db.ref(`events/${eventId}`).once('value', snap => {
+  const ev = snap.val();
+  if (!ev) { window.location.href = 'index.html'; return; }
+  eventData = ev;
+
+  renderHero(ev);
+  renderMenu(ev.menu);
+  renderPrice(ev);
+  document.title = `Smachno-Go — ${ev.nombre}`;
+  document.getElementById('main-content').style.display = 'block';
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+{
+  "rules": {
+    "events": {
+      ".read": true,
+      ".write": false,
+      "$eventId": {
+        "solicitudes_confirmadas": {
+          ".write": true
+        },
+        "solicitudes_counter": {
+          ".write": true
+        },
+        "abierto": {
+          ".write": true
+        },
+        ".write": true
+      }
+    },
+    "solicitudes": {
+      ".read": true,
+      ".write": true
+    }
+  }
+}

@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smachno-Go — Admin</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .admin-nav{background:var(--cream-2);border-bottom:.5px solid var(--border);display:flex;padding:0 18px}
+    .admin-nav-item{padding:11px 14px;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent}
+    .admin-nav-item.active{color:var(--dark);border-bottom-color:var(--terracota);font-weight:500}
+    .section{display:none}.section.active{display:block}
+
+    /* Stats */
+    .stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:18px}
+    .stat-card{background:var(--cream-2);border-radius:10px;border:.5px solid var(--border);padding:13px 15px}
+    .stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}
+    .stat-value{font-family:'Cormorant Garamond',serif;font-size:26px}
+    .stat-value.accent{color:var(--terracota)}
+    .stat-sub{font-size:11px;color:var(--muted);margin-top:2px}
+
+    /* Table rows */
+    .sol-row{padding:11px 16px;border-bottom:.5px solid var(--border-2);font-size:13px}
+    .sol-row:last-child{border-bottom:none}
+    .sol-row-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}
+    .sol-name{font-weight:500}
+    .sol-contact{font-size:12px;color:var(--muted)}
+    .sol-actions{display:flex;gap:6px;flex-shrink:0}
+    .btn-confirm{font-size:11px;padding:4px 10px;border-radius:6px;border:none;background:var(--terracota);color:var(--cream);cursor:pointer}
+    .btn-confirm:hover{background:#A8511F}
+    .btn-cancel-sol{font-size:11px;padding:4px 10px;border-radius:6px;border:.5px solid var(--border);background:transparent;color:var(--muted);cursor:pointer}
+    .btn-cancel-sol:hover{border-color:var(--terracota);color:var(--terracota)}
+    .btn-wa{font-size:11px;padding:4px 10px;border-radius:6px;border:.5px solid var(--sage);color:#3B5230;background:transparent;cursor:pointer}
+    .btn-wa:hover{background:var(--sage);color:var(--cream)}
+
+    /* Event rows */
+    .event-admin-row{padding:12px 16px;border-bottom:.5px solid var(--border-2);font-size:13px}
+    .event-admin-row:last-child{border-bottom:none}
+    .event-admin-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px}
+    .event-admin-name{font-weight:500;font-family:'Cormorant Garamond',serif;font-size:16px}
+    .event-admin-meta{font-size:12px;color:var(--muted);margin-top:2px}
+    .progress-sm{height:4px;background:var(--border-2);border-radius:2px;margin-top:6px}
+    .progress-sm-fill{height:4px;border-radius:2px}
+
+    /* Modal */
+    .modal-overlay{min-height:500px;background:rgba(44,36,22,.55);display:flex;align-items:flex-start;justify-content:center;padding:16px;margin:-20px}
+    .modal-box{background:var(--cream-2);border-radius:14px;border:.5px solid var(--border);width:100%;max-width:520px;overflow:hidden}
+    .modal-head{background:var(--dark);padding:13px 17px;display:flex;align-items:center;justify-content:space-between}
+    .modal-head-title{font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--cream)}
+    .modal-close{width:25px;height:25px;border-radius:50%;border:.5px solid rgba(245,240,232,.3);background:transparent;color:var(--cream);cursor:pointer;font-size:14px}
+    .modal-body{padding:17px;max-height:70vh;overflow-y:auto}
+    .modal-footer{padding:13px 17px;border-top:.5px solid var(--border-2);display:flex;gap:8px;justify-content:flex-end}
+    .form-section-label{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--terracota);font-weight:500;margin-bottom:9px;margin-top:14px}
+    .form-section-label:first-child{margin-top:0}
+    .form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+    .dish-edit-row{display:grid;grid-template-columns:1fr 1fr 26px;gap:6px;align-items:center;margin-bottom:6px}
+    .add-link{font-size:12px;color:var(--terracota);border:none;background:transparent;cursor:pointer;padding:2px 0}
+
+    /* Reminders */
+    .reminder-item{padding:12px 16px;border-bottom:.5px solid var(--border-2);font-size:13px;display:flex;align-items:center;gap:10px}
+    .reminder-item:last-child{border-bottom:none}
+    .reminder-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+    .reminder-info{flex:1}
+    .reminder-trigger{font-weight:500;font-size:13px}
+    .reminder-desc{font-size:12px;color:var(--muted);margin-top:2px}
+    .tag{font-size:10px;padding:2px 7px;border-radius:20px}
+    .tag-auto{background:#EDE8DF;color:#5A4F43}
+    .tag-manual{background:#F5EAE4;color:#8C3A1A}
+    .tag-sent{background:#E8EDE5;color:#3B5230}
+    .tag-pending{background:#FFF3E0;color:#854F0B}
+  </style>
+</head>
+<body>
+
+<div id="login-screen" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--cream)">
+  <div style="width:300px">
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:26px;color:var(--dark)">Smachno<span style="color:var(--terracota)">-Go</span></div>
+      <div style="font-size:13px;color:var(--muted);margin-top:4px">Panel de administración</div>
+    </div>
+    <div class="form-card">
+      <div class="form-group">
+        <label class="form-label">Contraseña</label>
+        <input class="form-input" id="pwd-input" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <button class="btn-primary" onclick="doLogin()">Ingresar</button>
+      <p class="note" id="login-error" style="color:#C4622D;display:none">Contraseña incorrecta.</p>
+    </div>
+  </div>
+</div>
+
+<div id="admin-app" style="display:none">
+  <div class="topbar">
+    <div class="topbar-logo" style="font-family:'Cormorant Garamond',serif;color:var(--cream);font-size:17px">Smachno<span style="color:var(--terracota)">-Go</span> <span style="color:var(--muted);font-size:13px;font-family:'Inter',sans-serif;margin-left:6px">· Admin</span></div>
+    <button onclick="doLogout()" style="font-size:12px;color:rgba(245,240,232,.5);background:transparent;border:none;cursor:pointer">Salir</button>
+  </div>
+  <div class="ornament"></div>
+
+  <div class="admin-nav">
+    <div class="admin-nav-item active" onclick="switchTab(this,'tab-sol')">Solicitudes</div>
+    <div class="admin-nav-item" onclick="switchTab(this,'tab-events')">Veladas</div>
+    <div class="admin-nav-item" onclick="switchTab(this,'tab-remind')">Recordatorios</div>
+  </div>
+
+  <div style="padding:18px">
+
+    <!-- SOLICITUDES -->
+    <div id="tab-sol" class="section active">
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card"><div class="stat-label">Solicitudes nuevas</div><div class="stat-value accent" id="st-nuevas">—</div><div class="stat-sub">sin confirmar</div></div>
+        <div class="stat-card"><div class="stat-label">Reservas confirmadas</div><div class="stat-value" id="st-confirmadas">—</div><div class="stat-sub">pago recibido</div></div>
+      </div>
+      <div class="card" id="sol-card">
+        <div class="card-header"><span class="card-title" id="sol-card-title">Cargando...</span></div>
+        <div id="sol-list"><div class="loading">Cargando solicitudes...</div></div>
+      </div>
+    </div>
+
+    <!-- VELADAS -->
+    <div id="tab-events" class="section">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+        <button class="btn-primary" style="width:auto;height:36px;padding:0 16px;font-size:13px" onclick="openNewEventModal()">+ Nueva velada</button>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Veladas programadas</span></div>
+        <div id="events-admin-list"><div class="loading">Cargando...</div></div>
+      </div>
+    </div>
+
+    <!-- RECORDATORIOS -->
+    <div id="tab-remind" class="section">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Cadena de recordatorios</span>
+          <span style="font-size:12px;color:var(--muted)" id="remind-event-label"></span>
+        </div>
+        <div id="remind-list">
+          <div class="reminder-item"><div class="reminder-dot" style="background:var(--terracota)"></div><div class="reminder-info"><div class="reminder-trigger">Al enviar solicitud</div><div class="reminder-desc">Email automático con datos de transferencia + WA manual tuyo</div></div><span class="tag tag-auto">Auto email</span></div>
+          <div class="reminder-item"><div class="reminder-dot" style="background:var(--sage)"></div><div class="reminder-info"><div class="reminder-trigger">Un mes antes</div><div class="reminder-desc">"No planifiques nada — vas a comer rico"</div></div><span class="tag tag-auto">Auto email</span></div>
+          <div class="reminder-item"><div class="reminder-dot" style="background:var(--sage)"></div><div class="reminder-info"><div class="reminder-trigger">14 días antes</div><div class="reminder-desc">"El lugar se confirma sólo con el pago anticipado"</div></div><span class="tag tag-auto">Auto email</span></div>
+          <div class="reminder-item"><div class="reminder-dot" style="background:var(--terracota)"></div><div class="reminder-info"><div class="reminder-trigger">Miércoles previo · 12:00 hs</div><div class="reminder-desc">Vencimiento del pago anticipado</div></div><span class="tag tag-pending">Pendiente</span></div>
+          <div class="reminder-item"><div class="reminder-dot" style="background:var(--muted)"></div><div class="reminder-info"><div class="reminder-trigger">Recordatorio final</div><div class="reminder-desc">A tu criterio, antes de la velada</div></div>
+            <div style="display:flex;align-items:center;gap:6px"><span class="tag tag-manual">WA manual</span><button class="btn-wa">Enviar ↗</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- MODAL VELADA -->
+  <div id="event-modal" style="display:none;position:fixed;inset:0;z-index:100">
+    <div class="modal-overlay">
+      <div class="modal-box">
+        <div class="modal-head">
+          <div class="modal-head-title" id="modal-title">Nueva velada</div>
+          <button class="modal-close" onclick="closeModal()">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-section-label">General</div>
+          <div class="form-group"><label class="form-label">Nombre de la velada</label><input class="form-input" id="m-nombre" placeholder="Borsch-fest: de lo clásico al vanguardismo"></div>
+          <div class="form-row-2">
+            <div class="form-group"><label class="form-label">Fecha</label><input class="form-input" id="m-fecha" type="date"></div>
+            <div class="form-group"><label class="form-label">Hora de inicio</label><input class="form-input" id="m-hora" type="time" value="19:00"></div>
+          </div>
+          <div class="form-row-2">
+            <div class="form-group"><label class="form-label">Lugares totales</label><input class="form-input" id="m-lugares" type="number" value="8" min="1"></div>
+            <div class="form-group"><label class="form-label">Precio (ARS / persona)</label><input class="form-input" id="m-precio" type="number" placeholder="3000"></div>
+          </div>
+
+          <div class="form-section-label">Datos de transferencia</div>
+          <div class="form-group"><label class="form-label">Banco</label><input class="form-input" id="m-banco" placeholder="Mercado Pago"></div>
+          <div class="form-group"><label class="form-label">Nombre del titular</label><input class="form-input" id="m-nombre-cuenta" placeholder="Hanna Pitsyk"></div>
+          <div class="form-group"><label class="form-label">CVU</label><input class="form-input" id="m-cvu" placeholder="0000003100022248174271"></div>
+          <div class="form-group"><label class="form-label">Alias</label><input class="form-input" id="m-alias" placeholder="hanna.pitsyk.mp"></div>
+
+          <div class="form-section-label">Menú</div>
+          <div style="margin-bottom:10px">
+            <div class="course-label" style="font-size:11px;color:var(--terracota);text-transform:uppercase;letter-spacing:.1em;margin-bottom:7px">Primera ronda</div>
+            <div id="m-primera"></div>
+            <button class="add-link" onclick="addDish('m-primera')">+ agregar plato</button>
+          </div>
+          <div style="margin-bottom:10px">
+            <div class="course-label" style="font-size:11px;color:var(--terracota);text-transform:uppercase;letter-spacing:.1em;margin-bottom:7px">Segunda ronda</div>
+            <div id="m-segunda"></div>
+            <button class="add-link" onclick="addDish('m-segunda')">+ agregar plato</button>
+          </div>
+          <div>
+            <div class="course-label" style="font-size:11px;color:var(--terracota);text-transform:uppercase;letter-spacing:.1em;margin-bottom:7px">Postres</div>
+            <div id="m-postres"></div>
+            <button class="add-link" onclick="addDish('m-postres')">+ agregar plato</button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-ghost" onclick="closeModal()">Cancelar</button>
+          <button class="btn-primary" style="width:auto;height:36px;padding:0 18px;font-size:13px" onclick="saveEvent()">Guardar velada</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script>
+const ADMIN_PASSWORD = 'smachnogo2025';
+let editingEventId = null;
+
+function doLogin() {
+  const pwd = document.getElementById('pwd-input').value;
+  if (pwd === ADMIN_PASSWORD) {
+    sessionStorage.setItem('sg_admin','1');
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('admin-app').style.display = 'block';
+    loadData();
+  } else {
+    document.getElementById('login-error').style.display = 'block';
+  }
+}
+function doLogout() {
+  sessionStorage.removeItem('sg_admin');
+  location.reload();
+}
+
+if (sessionStorage.getItem('sg_admin') === '1') {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('admin-app').style.display = 'block';
+  loadData();
+}
+
+function switchTab(el, id) {
+  document.querySelectorAll('.admin-nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById(id).classList.add('active');
+}
+
+function loadData() {
+  db.ref('events').on('value', snap => {
+    const raw = snap.val() || {};
+    const events = Object.entries(raw).map(([id,ev]) => ({...ev,id}))
+      .sort((a,b) => a.fecha.localeCompare(b.fecha));
+    renderEventsAdmin(events);
+  });
+
+  db.ref('solicitudes').on('value', snap => {
+    const raw = snap.val() || {};
+    const sols = Object.entries(raw).map(([id,s]) => ({...s,id}))
+      .sort((a,b) => b.fecha_solicitud - a.fecha_solicitud);
+    renderSolicitudes(sols);
+  });
+}
+
+function renderSolicitudes(sols) {
+  const nuevas = sols.filter(s => s.estado === 'solicitud').length;
+  const conf   = sols.filter(s => s.estado === 'confirmada').length;
+  document.getElementById('st-nuevas').textContent = nuevas;
+  document.getElementById('st-confirmadas').textContent = conf;
+
+  const nextEvent = sols.find(s => s.estado !== 'cancelada');
+  document.getElementById('sol-card-title').textContent =
+    nextEvent ? `Solicitudes — ${nextEvent.event_nombre || 'velada próxima'}` : 'Solicitudes';
+
+  const list = document.getElementById('sol-list');
+  if (!sols.length) { list.innerHTML = '<div class="loading">Sin solicitudes aún</div>'; return; }
+
+  list.innerHTML = sols.map(s => {
+    const badgeClass = s.estado === 'confirmada' ? 'badge-green' : s.estado === 'cancelada' ? 'badge-red' : 'badge-amber';
+    const badgeText  = s.estado === 'confirmada' ? 'Confirmada' : s.estado === 'cancelada' ? 'Cancelada' : 'Solicitud';
+    const waMsg = encodeURIComponent(`Hola ${s.nombre}! Te recordamos sobre la velada "${s.event_nombre}" del ${s.event_fecha}. Tu solicitud: ${s.numero_reserva}. Aguardamos tu pago anticipado.`);
+    return `
+      <div class="sol-row">
+        <div class="sol-row-top">
+          <div>
+            <div class="sol-name">${s.nombre} ${s.apellido} <span class="badge ${badgeClass}" style="font-size:11px;margin-left:4px">${badgeText}</span></div>
+            <div class="sol-contact">${s.telefono} · ${s.email} · ${s.lugares} lugar${s.lugares!==1?'es':''} · ${s.numero_reserva}</div>
+            <div class="sol-contact" style="margin-top:2px;color:var(--muted)">${s.event_nombre} · ${s.event_fecha} ${s.event_hora}</div>
+          </div>
+          <div class="sol-actions">
+            <a class="btn-wa" href="https://wa.me/${s.telefono.replace(/\D/g,'')}?text=${waMsg}" target="_blank">WA ↗</a>
+            ${s.estado === 'solicitud' ? `<button class="btn-confirm" onclick="confirmarSol('${s.id}','${s.eventId}',${s.lugares})">Confirmar</button>` : ''}
+            ${s.estado !== 'cancelada' ? `<button class="btn-cancel-sol" onclick="cancelarSol('${s.id}','${s.eventId}',${s.lugares},\'${s.estado}\')">Cancelar</button>` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function confirmarSol(solId, eventId, lugares) {
+  if (!confirm('¿Confirmar reserva?')) return;
+  await db.ref(`solicitudes/${solId}/estado`).set('confirmada');
+  const snap = await db.ref(`events/${eventId}/solicitudes_confirmadas`).once('value');
+  const actual = snap.val() || 0;
+  await db.ref(`events/${eventId}/solicitudes_confirmadas`).set(actual + lugares);
+}
+
+async function cancelarSol(solId, eventId, lugares, estadoActual) {
+  if (!confirm('¿Cancelar solicitud?')) return;
+  await db.ref(`solicitudes/${solId}/estado`).set('cancelada');
+  if (estadoActual === 'confirmada') {
+    const snap = await db.ref(`events/${eventId}/solicitudes_confirmadas`).once('value');
+    const actual = snap.val() || 0;
+    await db.ref(`events/${eventId}/solicitudes_confirmadas`).set(Math.max(0, actual - lugares));
+  }
+}
+
+function renderEventsAdmin(events) {
+  const list = document.getElementById('events-admin-list');
+  if (!events.length) { list.innerHTML = '<div class="loading">Sin veladas creadas</div>'; return; }
+  list.innerHTML = events.map(ev => {
+    const conf = ev.solicitudes_confirmadas || 0;
+    const pct  = Math.round((conf / ev.lugares) * 100);
+    const fillColor = pct >= 100 ? 'var(--terracota)' : 'var(--sage)';
+    return `
+      <div class="event-admin-row">
+        <div class="event-admin-top">
+          <div>
+            <div class="event-admin-name">${ev.nombre}</div>
+            <div class="event-admin-meta">${ev.fecha} · ${ev.hora} · $${Number(ev.precio).toLocaleString('es-AR')} ARS · ${ev.banco || '—'}</div>
+            <div class="progress-sm"><div class="progress-sm-fill" style="width:${pct}%;background:${fillColor}"></div></div>
+            <div style="font-size:11px;color:var(--muted);margin-top:3px">${conf} de ${ev.lugares} confirmados (${pct}%)</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0">
+            <button class="btn-outline" style="font-size:12px;padding:4px 10px" onclick="openEditEventModal('${ev.id}')">Editar</button>
+            <button class="btn-ghost" style="font-size:12px;padding:4px 10px" onclick="toggleEvent('${ev.id}',${ev.abierto !== false})">${ev.abierto !== false ? 'Cerrar' : 'Abrir'}</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function toggleEvent(id, isOpen) {
+  await db.ref(`events/${id}/abierto`).set(!isOpen);
+}
+
+function addDish(containerId) {
+  const wrap = document.getElementById(containerId);
+  const row = document.createElement('div');
+  row.className = 'dish-edit-row';
+  row.innerHTML = `
+    <input class="form-input" style="height:32px;font-size:12px" placeholder="Nombre del plato">
+    <input class="form-input" style="height:32px;font-size:12px" placeholder="Link Instagram (opcional)">
+    <button style="width:26px;height:26px;border-radius:6px;border:.5px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:13px" onclick="this.closest('.dish-edit-row').remove()">✕</button>
+  `;
+  wrap.appendChild(row);
+}
+
+function getDishes(containerId) {
+  const rows = document.querySelectorAll(`#${containerId} .dish-edit-row`);
+  return Array.from(rows).map(row => {
+    const inputs = row.querySelectorAll('input');
+    const nombre = inputs[0].value.trim();
+    const url    = inputs[1].value.trim();
+    return nombre ? { nombre, instagram_url: url || null, descripcion_corta: '', descripcion: '', ingredientes: [] } : null;
+  }).filter(Boolean);
+}
+
+function openNewEventModal() {
+  editingEventId = null;
+  document.getElementById('modal-title').textContent = 'Nueva velada';
+  ['m-nombre','m-fecha','m-hora','m-lugares','m-precio','m-banco','m-nombre-cuenta','m-cvu','m-alias'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el.type === 'number') el.value = id === 'm-lugares' ? 8 : '';
+    else if (el.type === 'time') el.value = '19:00';
+    else el.value = '';
+  });
+  ['m-primera','m-segunda','m-postres'].forEach(id => document.getElementById(id).innerHTML = '');
+  document.getElementById('event-modal').style.display = 'block';
+}
+
+async function openEditEventModal(id) {
+  editingEventId = id;
+  document.getElementById('modal-title').textContent = 'Editar velada';
+  const snap = await db.ref(`events/${id}`).once('value');
+  const ev = snap.val();
+  if (!ev) return;
+  document.getElementById('m-nombre').value = ev.nombre || '';
+  document.getElementById('m-fecha').value  = ev.fecha  || '';
+  document.getElementById('m-hora').value   = ev.hora   || '19:00';
+  document.getElementById('m-lugares').value = ev.lugares || 8;
+  document.getElementById('m-precio').value  = ev.precio  || '';
+  document.getElementById('m-banco').value   = ev.banco   || '';
+  document.getElementById('m-nombre-cuenta').value = ev.nombre_cuenta || '';
+  document.getElementById('m-cvu').value   = ev.cvu   || '';
+  document.getElementById('m-alias').value = ev.alias || '';
+
+  const rounds = { 'm-primera': 'primera_ronda', 'm-segunda': 'segunda_ronda', 'm-postres': 'postres' };
+  Object.entries(rounds).forEach(([containerId, key]) => {
+    const wrap = document.getElementById(containerId);
+    wrap.innerHTML = '';
+    const platos = (ev.menu && ev.menu[key]) || [];
+    platos.forEach(p => {
+      const row = document.createElement('div');
+      row.className = 'dish-edit-row';
+      row.innerHTML = `
+        <input class="form-input" style="height:32px;font-size:12px" value="${p.nombre || ''}">
+        <input class="form-input" style="height:32px;font-size:12px" value="${p.instagram_url || ''}">
+        <button style="width:26px;height:26px;border-radius:6px;border:.5px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:13px" onclick="this.closest('.dish-edit-row').remove()">✕</button>
+      `;
+      wrap.appendChild(row);
+    });
+  });
+  document.getElementById('event-modal').style.display = 'block';
+}
+
+function closeModal() { document.getElementById('event-modal').style.display = 'none'; }
+
+async function saveEvent() {
+  const nombre = document.getElementById('m-nombre').value.trim();
+  const fecha  = document.getElementById('m-fecha').value;
+  if (!nombre || !fecha) { alert('Completá nombre y fecha.'); return; }
+
+  const eventObj = {
+    nombre,
+    fecha,
+    hora:    document.getElementById('m-hora').value,
+    lugares: parseInt(document.getElementById('m-lugares').value) || 8,
+    precio:  parseInt(document.getElementById('m-precio').value)  || 0,
+    banco:        document.getElementById('m-banco').value.trim(),
+    nombre_cuenta:document.getElementById('m-nombre-cuenta').value.trim(),
+    cvu:     document.getElementById('m-cvu').value.trim(),
+    alias:   document.getElementById('m-alias').value.trim(),
+    abierto: true,
+    menu: {
+      primera_ronda: getDishes('m-primera'),
+      segunda_ronda: getDishes('m-segunda'),
+      postres:       getDishes('m-postres'),
+    }
+  };
+
+  if (editingEventId) {
+    await db.ref(`events/${editingEventId}`).update(eventObj);
+  } else {
+    await db.ref('events').push(eventObj);
+  }
+  closeModal();
+}
+</script>
+</body>
+</html>

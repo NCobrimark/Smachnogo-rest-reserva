@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smachno-Go — Veladas gastronómicas</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <a href="index.html" class="topbar-logo">Smachno<span>-Go</span></a>
+</div>
+<div class="ornament"></div>
+
+<div class="hero" style="padding-bottom:20px">
+  <div class="hero-tag">Córdoba, Argentina</div>
+  <h1 class="hero-title">Veladas <em>gastronómicas</em></h1>
+  <div class="hero-meta">
+    <span>Cocina ucraniana de autor</span>
+    <span>·</span>
+    <span>Hasta 8 comensales</span>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="section-label">Calendario</div>
+  <div class="cal-wrap">
+    <div class="cal-header">
+      <span class="cal-month" id="cal-month-label">Mayo 2025</span>
+      <div style="display:flex;gap:6px">
+        <button class="cal-nav-btn" id="cal-prev">‹</button>
+        <button class="cal-nav-btn" id="cal-next">›</button>
+      </div>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div class="cal-legend">
+      <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#6B7F5E"></div>Lugares disponibles</div>
+      <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#C4622D"></div>Sin lugares</div>
+    </div>
+  </div>
+
+  <div class="section-label">Próximas veladas</div>
+  <div id="events-list">
+    <div class="loading">Cargando veladas...</div>
+  </div>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script>
+const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DAYS_ES   = ['Lu','Ma','Mi','Ju','Vi','Sá','Do'];
+const MONTHS_SHORT = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+
+let currentYear  = new Date().getFullYear();
+let currentMonth = new Date().getMonth();
+let allEvents    = {};
+
+function formatDateKey(dateStr) { return dateStr.replace(/-/g,''); }
+
+function calcOccupancy(ev) {
+  const confirmed = ev.solicitudes_confirmadas || 0;
+  return Math.round((confirmed / ev.lugares) * 100);
+}
+
+function renderCalendar(events) {
+  const label = document.getElementById('cal-month-label');
+  const grid  = document.getElementById('cal-grid');
+  label.textContent = `${MONTHS_ES[currentMonth]} ${currentYear}`;
+  grid.innerHTML = '';
+
+  DAYS_ES.forEach(d => {
+    const el = document.createElement('div');
+    el.className = 'cal-day-name';
+    el.textContent = d;
+    grid.appendChild(el);
+  });
+
+  const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+  const offset   = (firstDay === 0) ? 6 : firstDay - 1;
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+  for (let i = 0; i < offset; i++) {
+    const el = document.createElement('div');
+    el.className = 'cal-day';
+    grid.appendChild(el);
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const el = document.createElement('div');
+    el.className = 'cal-day';
+    el.textContent = d;
+
+    const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const ev = Object.values(events).find(e => e.fecha === dateStr && e.abierto !== false);
+
+    if (ev) {
+      el.classList.add('has-event');
+      const dot = document.createElement('div');
+      dot.className = 'cal-dot';
+      const pct = calcOccupancy(ev);
+      dot.classList.add(pct >= 100 ? 'red' : 'green');
+      el.appendChild(dot);
+      el.onclick = () => { window.location.href = `evento.html?id=${ev.id}`; };
+    }
+    grid.appendChild(el);
+  }
+}
+
+function renderEventList(events) {
+  const list = document.getElementById('events-list');
+  const upcoming = Object.values(events)
+    .filter(e => e.abierto !== false && e.fecha >= new Date().toISOString().split('T')[0])
+    .sort((a,b) => a.fecha.localeCompare(b.fecha));
+
+  if (upcoming.length === 0) {
+    list.innerHTML = '<div class="loading">No hay veladas próximas. ¡Volvé pronto!</div>';
+    return;
+  }
+
+  list.innerHTML = '';
+  upcoming.forEach(ev => {
+    const fecha  = new Date(ev.fecha + 'T12:00:00');
+    const dia    = fecha.getDate();
+    const mes    = MONTHS_SHORT[fecha.getMonth()];
+    const pct    = calcOccupancy(ev);
+    const libre  = ev.lugares - (ev.solicitudes_confirmadas || 0);
+    const badgeClass = pct >= 100 ? 'badge-red' : (pct >= 75 ? 'badge-amber' : 'badge-green');
+    const badgeText  = pct >= 100 ? 'Sin lugares' : `${libre} lugar${libre !== 1 ? 'es' : ''}`;
+
+    const card = document.createElement('a');
+    card.className = 'event-card';
+    card.href = `evento.html?id=${ev.id}`;
+    card.innerHTML = `
+      <div class="event-date-block">
+        <div class="event-day">${dia}</div>
+        <div class="event-month">${mes}</div>
+      </div>
+      <div class="event-divider"></div>
+      <div class="event-info">
+        <div class="event-name">${ev.nombre}</div>
+        <div class="event-meta">${ev.hora} · ${ev.lugares} comensales · $${Number(ev.precio).toLocaleString('es-AR')} ARS</div>
+      </div>
+      <span class="badge ${badgeClass}">${badgeText}</span>
+    `;
+    list.appendChild(card);
+  });
+}
+
+document.getElementById('cal-prev').onclick = () => {
+  currentMonth--;
+  if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+  renderCalendar(allEvents);
+};
+document.getElementById('cal-next').onclick = () => {
+  currentMonth++;
+  if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+  renderCalendar(allEvents);
+};
+
+db.ref('events').on('value', snap => {
+  const raw = snap.val() || {};
+  allEvents = {};
+  Object.entries(raw).forEach(([id, ev]) => { allEvents[id] = { ...ev, id }; });
+  renderCalendar(allEvents);
+  renderEventList(allEvents);
+});
+</script>
+</body>
+</html>
