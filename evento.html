@@ -158,7 +158,7 @@ function renderPrice(ev) {
   document.getElementById('price-row').innerHTML = `
     <div>
       <div class="price-amount">$${Number(ev.precio).toLocaleString('es-AR')} <small>ARS / persona</small></div>
-      <div class="price-sub">50% anticipado · resto en la fiesta</div>
+      <div class="price-sub">${ev.anticipo ? 'Anticipo $' + Number(ev.anticipo).toLocaleString('es-AR') + ' ARS · resto en la fiesta' : 'Consultar anticipo'}</div>
     </div>
     <span class="badge ${badgeClass}">${badgeText}</span>
   `;
@@ -226,6 +226,7 @@ document.getElementById('btn-submit').onclick = async () => {
       ...solicitud,
       precio: eventData.precio,
       banco:  eventData.banco,
+      anticipo: eventData.anticipo || 0,
       nombre_cuenta: eventData.nombre_cuenta,
       cvu:    eventData.cvu,
       alias:  eventData.alias,

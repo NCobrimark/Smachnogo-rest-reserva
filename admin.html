@@ -166,6 +166,7 @@
           <div class="form-row-2">
             <div class="form-group"><label class="form-label">Lugares totales</label><input class="form-input" id="m-lugares" type="number" value="8" min="1"></div>
             <div class="form-group"><label class="form-label">Precio (ARS / persona)</label><input class="form-input" id="m-precio" type="number" placeholder="3000"></div>
+          <div class="form-group"><label class="form-label">Monto del anticipo (ARS) <span style="color:var(--terracota);font-size:11px">— no reembolsable</span></label><input class="form-input" id="m-anticipo" type="number" placeholder="ej: 3000"></div>
           </div>
 
           <div class="form-section-label">Datos de transferencia</div>
@@ -324,7 +325,7 @@ function renderEventsAdmin(events) {
         <div class="event-admin-top">
           <div>
             <div class="event-admin-name">${ev.nombre}</div>
-            <div class="event-admin-meta">${ev.fecha} · ${ev.hora} · $${Number(ev.precio).toLocaleString('es-AR')} ARS · ${ev.banco || '—'}</div>
+            <div class="event-admin-meta">${ev.fecha} · ${ev.hora} · $${Number(ev.precio).toLocaleString('es-AR')} ARS · anticipo $${Number(ev.anticipo||0).toLocaleString('es-AR')} · ${ev.banco || '—'}</div>
             <div class="progress-sm"><div class="progress-sm-fill" style="width:${pct}%;background:${fillColor}"></div></div>
             <div style="font-size:11px;color:var(--muted);margin-top:3px">${conf} de ${ev.lugares} confirmados (${pct}%)</div>
           </div>
@@ -367,7 +368,7 @@ function getDishes(containerId) {
 function openNewEventModal() {
   editingEventId = null;
   document.getElementById('modal-title').textContent = 'Nueva fiesta';
-  ['m-nombre','m-fecha','m-hora','m-lugares','m-precio','m-banco','m-nombre-cuenta','m-cvu','m-alias'].forEach(id => {
+  ['m-nombre','m-fecha','m-hora','m-lugares','m-precio','m-anticipo','m-banco','m-nombre-cuenta','m-cvu','m-alias'].forEach(id => {
     const el = document.getElementById(id);
     if (el.type === 'number') el.value = id === 'm-lugares' ? 8 : '';
     else if (el.type === 'time') el.value = '19:00';
@@ -388,6 +389,7 @@ async function openEditEventModal(id) {
   document.getElementById('m-hora').value   = ev.hora   || '19:00';
   document.getElementById('m-lugares').value = ev.lugares || 8;
   document.getElementById('m-precio').value  = ev.precio  || '';
+  document.getElementById('m-anticipo').value = ev.anticipo || '';
   document.getElementById('m-banco').value   = ev.banco   || '';
   document.getElementById('m-nombre-cuenta').value = ev.nombre_cuenta || '';
   document.getElementById('m-cvu').value   = ev.cvu   || '';
@@ -425,6 +427,7 @@ async function saveEvent() {
     hora:    document.getElementById('m-hora').value,
     lugares: parseInt(document.getElementById('m-lugares').value) || 8,
     precio:  parseInt(document.getElementById('m-precio').value)  || 0,
+    anticipo: parseInt(document.getElementById('m-anticipo').value) || 0,
     banco:        document.getElementById('m-banco').value.trim(),
     nombre_cuenta:document.getElementById('m-nombre-cuenta').value.trim(),
     cvu:     document.getElementById('m-cvu').value.trim(),

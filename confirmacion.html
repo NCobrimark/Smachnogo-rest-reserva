@@ -31,7 +31,7 @@ function formatFecha(str) {
   return `${d.getDate()} de ${MONTHS_ES[d.getMonth()]} de ${d.getFullYear()}`;
 }
 
-const anticipo   = Math.round(data.precio * data.lugares * 0.5);
+const anticipo   = data.anticipo ? data.anticipo * data.lugares : Math.round(data.precio * data.lugares * 0.3);
 const total      = data.precio * data.lugares;
 const resto      = total - anticipo;
 const fechaEvStr = formatFecha(data.event_fecha);
@@ -73,8 +73,12 @@ document.getElementById('confirm-content').innerHTML = `
     <div class="section-label" style="margin-bottom:10px">Pago anticipado</div>
     <div class="payment-amount">$${anticipo.toLocaleString('es-AR')} <small>ARS</small></div>
     <div class="payment-note">
-      Anticipado (50%) por ${data.lugares} persona${data.lugares !== 1 ? 's' : ''}.<br>
-      El resto — $${resto.toLocaleString('es-AR')} ARS — se abona en la velada.
+      Anticipo de reserva por ${data.lugares} persona${data.lugares !== 1 ? 's' : ''}.<br>
+      El resto — $${resto.toLocaleString('es-AR')} ARS — se abona en la fiesta.
+    </div>
+    <div style="background:#F5EAE4;border-radius:8px;padding:11px 14px;margin-bottom:10px;border-left:3px solid var(--terracota)">
+      <div style="font-size:13px;font-weight:500;color:#8C3A1A;margin-bottom:4px">⚠ El anticipo no es reembolsable</div>
+      <div style="font-size:12px;color:#8C3A1A;line-height:1.5">Este pago garantiza tu lugar en la fiesta. En caso de cancelación, el anticipo no se devuelve bajo ninguna circunstancia.</div>
     </div>
     <div class="deadline-box">
       ⚑ &nbsp;Realizá el pago antes del <strong>${deadlineStr} a las 12:00 hs</strong> (miércoles previo a la velada) para confirmar tu lugar.
