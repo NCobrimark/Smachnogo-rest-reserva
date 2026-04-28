@@ -176,12 +176,17 @@
 
           <div class="form-section-label">Menú</div>
           <div style="margin-bottom:10px">
-            <div class="course-label" style="font-size:11px;color:var(--terracota);text-transform:uppercase;letter-spacing:.1em;margin-bottom:7px">Primera ronda</div>
+            <div class="course-label" style="font-size:11px;color:var(--terracota);text-transform:uppercase;letter-spacing:.1em;margin-bottom:7px">Antipastos</div>
+            <div id="m-antipastos"></div>
+            <button class="add-link" onclick="addDish('m-antipastos')">+ agregar plato</button>
+          </div>
+          <div style="margin-bottom:10px">
+            <div class="course-label" style="font-size:11px;color:var(--terracota);text-transform:uppercase;letter-spacing:.1em;margin-bottom:7px">Primera mesa</div>
             <div id="m-primera"></div>
             <button class="add-link" onclick="addDish('m-primera')">+ agregar plato</button>
           </div>
           <div style="margin-bottom:10px">
-            <div class="course-label" style="font-size:11px;color:var(--terracota);text-transform:uppercase;letter-spacing:.1em;margin-bottom:7px">Segunda ronda</div>
+            <div class="course-label" style="font-size:11px;color:var(--terracota);text-transform:uppercase;letter-spacing:.1em;margin-bottom:7px">Segunda mesa</div>
             <div id="m-segunda"></div>
             <button class="add-link" onclick="addDish('m-segunda')">+ agregar plato</button>
           </div>
@@ -368,7 +373,7 @@ function openNewEventModal() {
     else if (el.type === 'time') el.value = '19:00';
     else el.value = '';
   });
-  ['m-primera','m-segunda','m-postres'].forEach(id => document.getElementById(id).innerHTML = '');
+  ['m-antipastos','m-primera','m-segunda','m-postres'].forEach(id => document.getElementById(id).innerHTML = '');
   document.getElementById('event-modal').style.display = 'block';
 }
 
@@ -388,7 +393,7 @@ async function openEditEventModal(id) {
   document.getElementById('m-cvu').value   = ev.cvu   || '';
   document.getElementById('m-alias').value = ev.alias || '';
 
-  const rounds = { 'm-primera': 'primera_ronda', 'm-segunda': 'segunda_ronda', 'm-postres': 'postres' };
+  const rounds = { 'm-antipastos': 'antipastos', 'm-primera': 'primera_mesa', 'm-segunda': 'segunda_mesa', 'm-postres': 'postres' };
   Object.entries(rounds).forEach(([containerId, key]) => {
     const wrap = document.getElementById(containerId);
     wrap.innerHTML = '';
@@ -426,9 +431,10 @@ async function saveEvent() {
     alias:   document.getElementById('m-alias').value.trim(),
     abierto: true,
     menu: {
-      primera_ronda: getDishes('m-primera'),
-      segunda_ronda: getDishes('m-segunda'),
-      postres:       getDishes('m-postres'),
+      antipastos:   getDishes('m-antipastos'),
+      primera_mesa: getDishes('m-primera'),
+      segunda_mesa: getDishes('m-segunda'),
+      postres:      getDishes('m-postres'),
     }
   };
 

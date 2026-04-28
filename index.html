@@ -3,24 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Smachno-Go — Veladas gastronómicas</title>
+  <title>Smachno-Go — Fiestas gastronómicas</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
 <div class="topbar">
-  <a href="index.html" class="topbar-logo">Smachno<span>-Go</span></a>
+  <a href="index.html" class="topbar-logo">
+    <img src="img/Smachno_go_Inst.jpg" alt="Smachno-Go" class="topbar-logo-img" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'">
+    <span class="topbar-logo-text">Smachno<span>-Go</span></span>
+  </a>
 </div>
 <div class="ornament"></div>
 
 <div class="hero" style="padding-bottom:20px">
-  <div class="hero-tag">Córdoba, Argentina</div>
-  <h1 class="hero-title">Veladas <em>gastronómicas</em></h1>
-  <div class="hero-meta">
-    <span>Cocina ucraniana de autor</span>
-    <span>·</span>
-    <span>Hasta 8 comensales</span>
-  </div>
+  <div class="hero-tag">Fiestas gastronómicas · Córdoba, Argentina</div>
+  <h1 class="hero-title">Cocina ucraniana <em>tradicional</em></h1>
 </div>
 
 <div class="main">
@@ -41,9 +39,9 @@
     </div>
   </div>
 
-  <div class="section-label">Próximas veladas</div>
+  <div class="section-label">Próximas fiestas</div>
   <div id="events-list">
-    <div class="loading">Cargando veladas...</div>
+    <div class="loading">Cargando fiestas...</div>
   </div>
 
 </div>
@@ -118,7 +116,7 @@ function renderEventList(events) {
     .sort((a,b) => a.fecha.localeCompare(b.fecha));
 
   if (upcoming.length === 0) {
-    list.innerHTML = '<div class="loading">No hay veladas próximas. ¡Volvé pronto!</div>';
+    list.innerHTML = '<div class="loading">No hay fiestas próximas. ¡Volvé pronto!</div>';
     return;
   }
 

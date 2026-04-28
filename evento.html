@@ -3,14 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Smachno-Go — Velada</title>
+  <title>Smachno-Go — Fiesta gastronómica</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
 <div class="topbar">
   <a href="index.html" class="topbar-back">←</a>
-  <a href="index.html" class="topbar-logo">Smachno<span>-Go</span></a>
+  <a href="index.html" class="topbar-logo">
+    <img src="img/Smachno_go_Inst.jpg" alt="Smachno-Go" class="topbar-logo-img" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'">
+    <span class="topbar-logo-text">Smachno<span>-Go</span></span>
+  </a>
   <div style="width:24px"></div>
 </div>
 <div class="ornament"></div>
@@ -21,7 +24,7 @@
 
 <div class="main" id="main-content" style="display:none">
 
-  <div class="section-label">Menú de la velada</div>
+  <div class="section-label">Menú de la fiesta</div>
   <div class="card" id="menu-card"></div>
 
   <div class="price-row" id="price-row"></div>
@@ -101,8 +104,7 @@ function renderHero(ev) {
     <h1 class="hero-title">${ev.nombre}</h1>
     <div class="hero-meta">
       <span>◷ ${ev.hora}</span>
-      <span>◎ ${ev.lugares} comensales</span>
-      <span>◈ 3 tiempos</span>
+      <span>◈ 4 tiempos</span>
     </div>
     <div class="progress-wrap">
       <div class="progress-labels">
@@ -119,11 +121,11 @@ function renderMenu(menu) {
   if (!menu) { card.innerHTML = '<div style="padding:16px;color:var(--muted)">Menú próximamente</div>'; return; }
 
   const sections = [
-    { key: 'primera_ronda', label: 'Primera ronda' },
-    { key: 'segunda_ronda', label: 'Segunda ronda' },
-    { key: 'postres',       label: 'Postres' },
+    { key: 'antipastos',   label: 'Antipastos' },
+    { key: 'primera_mesa', label: 'Primera mesa' },
+    { key: 'segunda_mesa', label: 'Segunda mesa' },
+    { key: 'postres',      label: 'Postres' },
   ];
-
   card.innerHTML = sections.map(s => {
     const platos = menu[s.key] || [];
     if (!platos.length) return '';
@@ -155,7 +157,7 @@ function renderPrice(ev) {
   document.getElementById('price-row').innerHTML = `
     <div>
       <div class="price-amount">$${Number(ev.precio).toLocaleString('es-AR')} <small>ARS / persona</small></div>
-      <div class="price-sub">50% anticipado · resto en la velada</div>
+      <div class="price-sub">50% anticipado · resto en la fiesta</div>
     </div>
     <span class="badge ${badgeClass}">${badgeText}</span>
   `;

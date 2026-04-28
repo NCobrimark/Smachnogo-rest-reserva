@@ -1,14 +1,15 @@
 // =============================================
 // SMACHNO-GO — Firebase Config
+// Замінити на свої дані з Firebase Console
 // =============================================
 const firebaseConfig = {
-  apiKey: "AIzaSyC8vt7aX7IgVP2MycCNnwU3oHGFNBd6fzM",
-  authDomain: "smachno-go-reserva-restaurante.firebaseapp.com",
-  databaseURL: "https://smachno-go-reserva-restaurante-default-rtdb.firebaseio.com",
-  projectId: "smachno-go-reserva-restaurante",
-  storageBucket: "smachno-go-reserva-restaurante.firebasestorage.app",
-  messagingSenderId: "422115978392",
-  appId: "1:422115978392:web:3cfd8b4cb9fe0731d2b4ed"
+  apiKey: "TU_API_KEY",
+  authDomain: "TU_PROJECT.firebaseapp.com",
+  databaseURL: "https://TU_PROJECT-default-rtdb.firebaseio.com",
+  projectId: "TU_PROJECT",
+  storageBucket: "TU_PROJECT.appspot.com",
+  messagingSenderId: "TU_SENDER_ID",
+  appId: "TU_APP_ID"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -29,17 +30,21 @@ const auth = firebase.auth();
 //     nombre_cuenta: "Hanna Pitsyk"
 //     cvu: "0000003100022248174271"
 //     alias: "hanna.pitsyk.mp"
-//     abierto: true
-//     solicitudes_confirmadas: 0
-//     solicitudes_counter: 0
 //     menu/
-//       primera_ronda: [{nombre, instagram_url, descripcion_corta, descripcion, ingredientes}]
-//       segunda_ronda: [{nombre, instagram_url, descripcion_corta, descripcion, ingredientes}]
-//       postres:       [{nombre, instagram_url, descripcion_corta, descripcion, ingredientes}]
+//       primera_ronda: [{nombre, instagram_url, descripcion}]
+//       segunda_ronda: [{nombre, instagram_url, descripcion}]
+//       postres:       [{nombre, instagram_url, descripcion}]
+//     abierto: true
 //
 // solicitudes/
 //   {solicitudId}/
-//     eventId, event_nombre, event_fecha, event_hora
-//     nombre, apellido, email, telefono
-//     lugares, estado, numero_reserva, fecha_solicitud
+//     eventId: "..."
+//     nombre: "Ivan"
+//     apellido: "Franco"
+//     email: "ivan@example.com"
+//     telefono: "+54 9 351..."
+//     lugares: 2
+//     estado: "solicitud" | "confirmada" | "cancelada"
+//     fecha_solicitud: timestamp
+//     numero_reserva: "SG-170525-001"
 // =============================================

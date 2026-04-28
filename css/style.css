@@ -17,8 +17,11 @@ body { font-family: 'Inter', sans-serif; background: var(--cream); color: var(--
 
 /* ── Topbar ── */
 .topbar { background: var(--dark); padding: 13px 20px; display: flex; align-items: center; justify-content: space-between; }
-.topbar-logo { font-family: 'Cormorant Garamond', serif; color: var(--cream); font-size: 19px; text-decoration: none; }
+.topbar-logo { font-family: 'Cormorant Garamond', serif; color: var(--cream); font-size: 19px; text-decoration: none; display: flex; align-items: center; }
 .topbar-logo span { color: var(--terracota); }
+.topbar-logo-img { height: 36px; width: 36px; object-fit: cover; border-radius: 50%; margin-right: 8px; }
+.topbar-logo-text { font-family: 'Cormorant Garamond', serif; color: var(--cream); font-size: 19px; }
+.topbar-logo-text span { color: var(--terracota); }
 .topbar-back { color: var(--cream); opacity: .55; font-size: 18px; text-decoration: none; cursor: pointer; }
 
 /* ── Ornament strip ── */
