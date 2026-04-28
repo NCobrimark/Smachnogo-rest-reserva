@@ -98,7 +98,7 @@
 
   <div class="admin-nav">
     <div class="admin-nav-item active" onclick="switchTab(this,'tab-sol')">Solicitudes</div>
-    <div class="admin-nav-item" onclick="switchTab(this,'tab-events')">Veladas</div>
+    <div class="admin-nav-item" onclick="switchTab(this,'tab-events')">Fiestas</div>
     <div class="admin-nav-item" onclick="switchTab(this,'tab-remind')">Recordatorios</div>
   </div>
 
@@ -119,10 +119,10 @@
     <!-- VELADAS -->
     <div id="tab-events" class="section">
       <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
-        <button class="btn-primary" style="width:auto;height:36px;padding:0 16px;font-size:13px" onclick="openNewEventModal()">+ Nueva velada</button>
+        <button class="btn-primary" style="width:auto;height:36px;padding:0 16px;font-size:13px" onclick="openNewEventModal()">+ Nueva fiesta</button>
       </div>
       <div class="card">
-        <div class="card-header"><span class="card-title">Veladas programadas</span></div>
+        <div class="card-header"><span class="card-title">Fiestas programadas</span></div>
         <div id="events-admin-list"><div class="loading">Cargando...</div></div>
       </div>
     </div>
@@ -153,7 +153,7 @@
     <div class="modal-overlay">
       <div class="modal-box">
         <div class="modal-head">
-          <div class="modal-head-title" id="modal-title">Nueva velada</div>
+          <div class="modal-head-title" id="modal-title">Nueva fiesta</div>
           <button class="modal-close" onclick="closeModal()">✕</button>
         </div>
         <div class="modal-body">
@@ -314,7 +314,7 @@ async function cancelarSol(solId, eventId, lugares, estadoActual) {
 
 function renderEventsAdmin(events) {
   const list = document.getElementById('events-admin-list');
-  if (!events.length) { list.innerHTML = '<div class="loading">Sin veladas creadas</div>'; return; }
+  if (!events.length) { list.innerHTML = '<div class="loading">Sin fiestas creadas</div>'; return; }
   list.innerHTML = events.map(ev => {
     const conf = ev.solicitudes_confirmadas || 0;
     const pct  = Math.round((conf / ev.lugares) * 100);
@@ -366,7 +366,7 @@ function getDishes(containerId) {
 
 function openNewEventModal() {
   editingEventId = null;
-  document.getElementById('modal-title').textContent = 'Nueva velada';
+  document.getElementById('modal-title').textContent = 'Nueva fiesta';
   ['m-nombre','m-fecha','m-hora','m-lugares','m-precio','m-banco','m-nombre-cuenta','m-cvu','m-alias'].forEach(id => {
     const el = document.getElementById(id);
     if (el.type === 'number') el.value = id === 'm-lugares' ? 8 : '';
@@ -379,7 +379,7 @@ function openNewEventModal() {
 
 async function openEditEventModal(id) {
   editingEventId = id;
-  document.getElementById('modal-title').textContent = 'Editar velada';
+  document.getElementById('modal-title').textContent = 'Editar fiesta';
   const snap = await db.ref(`events/${id}`).once('value');
   const ev = snap.val();
   if (!ev) return;

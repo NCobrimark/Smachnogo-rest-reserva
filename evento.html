@@ -120,14 +120,15 @@ function renderMenu(menu) {
   const card = document.getElementById('menu-card');
   if (!menu) { card.innerHTML = '<div style="padding:16px;color:var(--muted)">Menú próximamente</div>'; return; }
 
+  // Сумісність зі старими і новими ключами меню
   const sections = [
-    { key: 'antipastos',   label: 'Antipastos' },
-    { key: 'primera_mesa', label: 'Primera mesa' },
-    { key: 'segunda_mesa', label: 'Segunda mesa' },
-    { key: 'postres',      label: 'Postres' },
+    { key: 'antipastos',   fallback: null,           label: 'Antipastos' },
+    { key: 'primera_mesa', fallback: 'primera_ronda', label: 'Primera mesa' },
+    { key: 'segunda_mesa', fallback: 'segunda_ronda', label: 'Segunda mesa' },
+    { key: 'postres',      fallback: null,            label: 'Postres' },
   ];
   card.innerHTML = sections.map(s => {
-    const platos = menu[s.key] || [];
+    const platos = menu[s.key] || (s.fallback ? menu[s.fallback] : null) || [];
     if (!platos.length) return '';
     return `
       <div class="course-block">
