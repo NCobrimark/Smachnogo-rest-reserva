@@ -69,14 +69,29 @@
 <script>
 const params  = new URLSearchParams(window.location.search);
 const eventId = params.get('event');
-const platoNombre = decodeURIComponent(params.get('plato') || '');
+const platoNombre = decodeURIComponent(decodeURIComponent(params.get('plato') || ''));
 const isAdmin = sessionStorage.getItem('sg_admin') === '1';
 
 const backUrl = eventId ? `evento.html?id=${eventId}` : 'index.html';
 document.getElementById('back-link').href = backUrl;
 document.getElementById('back-btn-bottom').href = backUrl;
 
-if (isAdmin) document.getElementById('admin-bar').classList.remove('hidden');
+let currentMode = 'view'; // always start in view mode
+
+function setMode(mode) {
+  currentMode = mode;
+  if (mode === 'edit') {
+    document.getElementById('admin-bar').classList.remove('hidden');
+    document.getElementById('btn-edit-mode').style.background = '#C4622D';
+    document.getElementById('btn-view-mode').style.background = 'transparent';
+    if (platoData) renderEditMode(platoData);
+  } else {
+    document.getElementById('admin-bar').classList.add('hidden');
+    document.getElementById('btn-view-mode').style.background = '#C4622D';
+    document.getElementById('btn-edit-mode').style.background = 'transparent';
+    if (platoData) renderViewMode(platoData);
+  }
+}
 
 let platoData = null;
 let platoRef  = null;
@@ -135,14 +150,16 @@ function renderEditMode(p) {
   document.getElementById('photo-section').innerHTML = `
     <div class="section-label" style="margin-bottom:8px">Fotos del plato</div>
     <div class="photo-gallery">
-      <div class="photo-upload" onclick="alert('Carga de fotos disponible próximamente')">
+      <label class="photo-upload" style="cursor:pointer">
+        <input type="file" accept="image/*" style="display:none" onchange="previewPhoto(this,0)">
         <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="1" y="3" width="20" height="16" rx="3" stroke="#7A6E60" stroke-width="1.2"/><circle cx="11" cy="11" r="4" stroke="#7A6E60" stroke-width="1.2"/></svg>
         <span>+ foto principal</span>
-      </div>
-      <div class="photo-upload" onclick="alert('Carga de fotos disponible próximamente')">
+      </label>
+      <label class="photo-upload" style="cursor:pointer">
+        <input type="file" accept="image/*" style="display:none" onchange="previewPhoto(this,1)">
         <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="1" y="3" width="20" height="16" rx="3" stroke="#7A6E60" stroke-width="1.2"/><circle cx="11" cy="11" r="4" stroke="#7A6E60" stroke-width="1.2"/></svg>
         <span>+ foto extra</span>
-      </div>
+      </label>
     </div>
   `;
 
@@ -165,6 +182,24 @@ function renderEditMode(p) {
   `;
 
   document.getElementById('main-content').style.display = 'block';
+}
+
+let photosBase64 = [];
+
+function previewPhoto(input, index) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    photosBase64[index] = e.target.result;
+    const label = input.closest('label');
+    label.style.backgroundImage = `url(${e.target.result})`;
+    label.style.backgroundSize = 'cover';
+    label.style.backgroundPosition = 'center';
+    label.querySelector('svg').style.display = 'none';
+    label.querySelector('span').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
 }
 
 document.getElementById('btn-save').onclick = async () => {
@@ -201,7 +236,10 @@ if (eventId && platoNombre) {
     });
     if (!found) found = { nombre: platoNombre };
     platoData = found;
-    isAdmin ? renderEditMode(found) : renderViewMode(found);
+    if (isAdmin) {
+      document.getElementById('admin-topbar-btns').style.display = 'flex';
+    }
+    renderViewMode(found); // always start in view mode
   });
 } else {
   document.getElementById('dish-hero').innerHTML = '<div class="loading" style="color:#F5F0E8;opacity:.5">Plato no encontrado.</div>';

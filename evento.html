@@ -141,7 +141,7 @@ function renderMenu(menu) {
             </div>
             ${p.instagram_url
               ? `<a class="dish-link" href="${p.instagram_url}" target="_blank">▶ Instagram</a>`
-              : `<a class="dish-link" href="plato.html?event=${eventId}&plato=${encodeURIComponent(p.nombre)}">▶ Ver plato</a>`
+              : `<a class="dish-link" href="plato.html?event=${eventId}&plato=${encodeURIComponent(encodeURIComponent(p.nombre))}">▶ Ver plato</a>`
             }
           </div>
         `).join('')}
