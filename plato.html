@@ -59,7 +59,7 @@
 
   <div id="origin-section"></div>
 
-  <a id="back-btn-bottom" href="#" class="btn-outline" style="display:block;text-align:center;text-decoration:none">← Volver a la velada</a>
+  <a id="back-btn-bottom" href="#" class="btn-outline" style="display:block;text-align:center;text-decoration:none">← Volver a la fiesta</a>
 
 </div>
 
@@ -98,7 +98,7 @@ let platoRef  = null;
 
 function renderViewMode(p) {
   document.getElementById('dish-hero').innerHTML = `
-    <div class="hero-tag">Plato de la velada</div>
+    <div class="hero-tag">Plato de la fiesta</div>
     <h1 class="hero-title">${p.nombre}</h1>
     <div class="hero-meta"><span>${p.descripcion_corta || ''}</span></div>
   `;
@@ -142,7 +142,7 @@ function renderViewMode(p) {
 
 function renderEditMode(p) {
   document.getElementById('dish-hero').innerHTML = `
-    <div class="hero-tag">Plato de la velada</div>
+    <div class="hero-tag">Plato de la fiesta</div>
     <h1 class="hero-title">${p.nombre}</h1>
     <div class="hero-meta"><span>${p.descripcion_corta || ''}</span></div>
   `;
