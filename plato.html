@@ -70,7 +70,7 @@
 const params  = new URLSearchParams(window.location.search);
 const eventId = params.get('event');
 const platoNombre = decodeURIComponent(decodeURIComponent(params.get('plato') || ''));
-const isAdmin = sessionStorage.getItem('sg_admin') === '1';
+const isAdmin = sessionStorage.getItem('sg_admin') === '1' || params.get('admin') === '1';
 
 const backUrl = eventId ? `evento.html?id=${eventId}` : 'index.html';
 document.getElementById('back-link').href = backUrl;

@@ -53,7 +53,7 @@
     .form-section-label{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--terracota);font-weight:500;margin-bottom:9px;margin-top:14px}
     .form-section-label:first-child{margin-top:0}
     .form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-    .dish-edit-row{display:grid;grid-template-columns:1fr 1fr 26px;gap:6px;align-items:center;margin-bottom:6px}
+    .dish-edit-row{display:grid;grid-template-columns:1fr 1fr 26px 26px;gap:6px;align-items:center;margin-bottom:6px}
     .add-link{font-size:12px;color:var(--terracota);border:none;background:transparent;cursor:pointer;padding:2px 0}
 
     /* Reminders */
@@ -350,6 +350,7 @@ function addDish(containerId) {
   row.innerHTML = `
     <input class="form-input" style="height:32px;font-size:12px" placeholder="Nombre del plato">
     <input class="form-input" style="height:32px;font-size:12px" placeholder="Link Instagram (opcional)">
+    <button style="width:26px;height:26px;border-radius:6px;border:.5px solid #6B7F5E;background:transparent;color:#3B5230;cursor:pointer;font-size:12px" title="Editar descripción del plato" onclick="editPlato(this)">✏</button>
     <button style="width:26px;height:26px;border-radius:6px;border:.5px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:13px" onclick="this.closest('.dish-edit-row').remove()">✕</button>
   `;
   wrap.appendChild(row);
@@ -415,6 +416,15 @@ async function openEditEventModal(id) {
 }
 
 function closeModal() { document.getElementById('event-modal').style.display = 'none'; }
+
+function editPlato(btn) {
+  const row = btn.closest('.dish-edit-row');
+  const nombre = row.querySelectorAll('input')[0].value.trim();
+  if (!nombre) { alert('Primero ingresá el nombre del plato.'); return; }
+  if (!editingEventId) { alert('Guardá la fiesta primero antes de editar el plato.'); return; }
+  const url = 'plato.html?event=' + editingEventId + '&plato=' + encodeURIComponent(encodeURIComponent(nombre)) + '&admin=1';
+  window.open(url, '_blank');
+}
 
 async function saveEvent() {
   const nombre = document.getElementById('m-nombre').value.trim();
