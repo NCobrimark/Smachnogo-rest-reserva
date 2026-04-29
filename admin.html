@@ -116,7 +116,7 @@
       </div>
     </div>
 
-    <!-- VELADAS -->
+    <!-- FIESTAS -->
     <div id="tab-events" class="section">
       <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
         <button class="btn-primary" style="width:auto;height:36px;padding:0 16px;font-size:13px" onclick="openNewEventModal()">+ Nueva fiesta</button>
@@ -139,7 +139,7 @@
           <div class="reminder-item"><div class="reminder-dot" style="background:var(--sage)"></div><div class="reminder-info"><div class="reminder-trigger">Un mes antes</div><div class="reminder-desc">"No planifiques nada — vas a comer rico"</div></div><span class="tag tag-auto">Auto email</span></div>
           <div class="reminder-item"><div class="reminder-dot" style="background:var(--sage)"></div><div class="reminder-info"><div class="reminder-trigger">14 días antes</div><div class="reminder-desc">"El lugar se confirma sólo con el pago anticipado"</div></div><span class="tag tag-auto">Auto email</span></div>
           <div class="reminder-item"><div class="reminder-dot" style="background:var(--terracota)"></div><div class="reminder-info"><div class="reminder-trigger">Miércoles previo · 12:00 hs</div><div class="reminder-desc">Vencimiento del pago anticipado</div></div><span class="tag tag-pending">Pendiente</span></div>
-          <div class="reminder-item"><div class="reminder-dot" style="background:var(--muted)"></div><div class="reminder-info"><div class="reminder-trigger">Recordatorio final</div><div class="reminder-desc">A tu criterio, antes de la velada</div></div>
+          <div class="reminder-item"><div class="reminder-dot" style="background:var(--muted)"></div><div class="reminder-info"><div class="reminder-trigger">Recordatorio final</div><div class="reminder-desc">A tu criterio, antes de la fiesta</div></div>
             <div style="display:flex;align-items:center;gap:6px"><span class="tag tag-manual">WA manual</span><button class="btn-wa">Enviar ↗</button></div>
           </div>
         </div>
@@ -359,10 +359,12 @@ function addDish(containerId) {
 function getDishes(containerId) {
   const rows = document.querySelectorAll(`#${containerId} .dish-edit-row`);
   return Array.from(rows).map(row => {
-    const inputs = row.querySelectorAll('input');
-    const nombre = inputs[0].value.trim();
-    const url    = inputs[1].value.trim();
-    return nombre ? { nombre, instagram_url: url || null, descripcion_corta: '', descripcion: '', ingredientes: [] } : null;
+    const inputs   = row.querySelectorAll('input');
+    const nombre   = inputs[0].value.trim();
+    const url      = inputs[1].value.trim();
+    if (!nombre) return null;
+    const existing = row.dataset.existing ? JSON.parse(row.dataset.existing) : {};
+    return { ...existing, nombre, instagram_url: url || null };
   }).filter(Boolean);
 }
 
@@ -401,12 +403,14 @@ async function openEditEventModal(id) {
     const wrap = document.getElementById(containerId);
     wrap.innerHTML = '';
     const platos = (ev.menu && ev.menu[key]) || [];
-    platos.forEach(p => {
+    platos.forEach((p, idx) => {
       const row = document.createElement('div');
       row.className = 'dish-edit-row';
+      row.dataset.existing = JSON.stringify(p);
       row.innerHTML = `
         <input class="form-input" style="height:32px;font-size:12px" value="${p.nombre || ''}">
         <input class="form-input" style="height:32px;font-size:12px" value="${p.instagram_url || ''}">
+        <button style="width:26px;height:26px;border-radius:6px;border:.5px solid #6B7F5E;background:transparent;color:#3B5230;cursor:pointer;font-size:12px" title="Editar descripción del plato" data-course="${key}" data-index="${idx}" onclick="editPlato(this)">✏</button>
         <button style="width:26px;height:26px;border-radius:6px;border:.5px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:13px" onclick="this.closest('.dish-edit-row').remove()">✕</button>
       `;
       wrap.appendChild(row);
@@ -418,11 +422,15 @@ async function openEditEventModal(id) {
 function closeModal() { document.getElementById('event-modal').style.display = 'none'; }
 
 function editPlato(btn) {
-  const row = btn.closest('.dish-edit-row');
+  const row    = btn.closest('.dish-edit-row');
   const nombre = row.querySelectorAll('input')[0].value.trim();
   if (!nombre) { alert('Primero ingresá el nombre del plato.'); return; }
   if (!editingEventId) { alert('Guardá la fiesta primero antes de editar el plato.'); return; }
-  const url = 'plato.html?event=' + editingEventId + '&plato=' + encodeURIComponent(encodeURIComponent(nombre)) + '&admin=1';
+  const course = btn.dataset.course;
+  const index  = btn.dataset.index;
+  const url = (course !== undefined && index !== undefined)
+    ? `plato.html?event=${editingEventId}&curso=${course}&indice=${index}&admin=1`
+    : `plato.html?event=${editingEventId}&plato=${encodeURIComponent(nombre)}&admin=1`;
   window.open(url, '_blank');
 }
 
@@ -442,7 +450,7 @@ async function saveEvent() {
     nombre_cuenta:document.getElementById('m-nombre-cuenta').value.trim(),
     cvu:     document.getElementById('m-cvu').value.trim(),
     alias:   document.getElementById('m-alias').value.trim(),
-    abierto: true,
+    ...(editingEventId ? {} : { abierto: true }),
     menu: {
       antipastos:   getDishes('m-antipastos'),
       primera_mesa: getDishes('m-primera'),

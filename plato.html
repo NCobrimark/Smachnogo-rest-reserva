@@ -67,34 +67,72 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 <script src="js/firebase-config.js"></script>
 <script>
-const params  = new URLSearchParams(window.location.search);
-const eventId = params.get('event');
+const params      = new URLSearchParams(window.location.search);
+const eventId     = params.get('event');
 const platoNombre = decodeURIComponent(decodeURIComponent(params.get('plato') || ''));
-const isAdmin = sessionStorage.getItem('sg_admin') === '1' || params.get('admin') === '1';
+const cursoParam  = params.get('curso');
+const indiceParam = params.get('indice') !== null ? parseInt(params.get('indice')) : null;
+const isAdmin     = params.get('admin') === '1';
 
 const backUrl = eventId ? `evento.html?id=${eventId}` : 'index.html';
-document.getElementById('back-link').href = backUrl;
+document.getElementById('back-link').href       = backUrl;
 document.getElementById('back-btn-bottom').href = backUrl;
 
-let currentMode = 'view'; // always start in view mode
+let platoData    = null;
+let platoRef     = null;
+let photosBase64 = [];
 
-function setMode(mode) {
-  currentMode = mode;
-  if (mode === 'edit') {
-    document.getElementById('admin-bar').classList.remove('hidden');
-    document.getElementById('btn-edit-mode').style.background = '#C4622D';
-    document.getElementById('btn-view-mode').style.background = 'transparent';
-    if (platoData) renderEditMode(platoData);
-  } else {
-    document.getElementById('admin-bar').classList.add('hidden');
-    document.getElementById('btn-view-mode').style.background = '#C4622D';
-    document.getElementById('btn-edit-mode').style.background = 'transparent';
-    if (platoData) renderViewMode(platoData);
-  }
+if (isAdmin) {
+  document.getElementById('admin-bar').classList.remove('hidden');
 }
 
-let platoData = null;
-let platoRef  = null;
+document.getElementById('btn-save').onclick = async () => {
+  if (!platoRef) return;
+  const updates = {
+    descripcion_corta: document.getElementById('e-sub')?.value.trim()    || '',
+    descripcion:       document.getElementById('e-desc')?.value.trim()   || '',
+    cita:              document.getElementById('e-cita')?.value.trim()   || '',
+    origen:            document.getElementById('e-origen')?.value.trim() || '',
+    ingredientes: (document.getElementById('e-ings')?.value || '').split(',').map(s => s.trim()).filter(Boolean),
+  };
+  const newPhotos = photosBase64.filter(Boolean);
+  if (newPhotos.length) updates.fotos = newPhotos;
+  try {
+    await platoRef.update(updates);
+    alert('¡Guardado!');
+  } catch(e) {
+    alert('Error al guardar: ' + e.message);
+  }
+};
+
+function previewPhoto(input, index) {
+  const file = input.files[0];
+  if (!file) return;
+  const img = new Image();
+  const objectUrl = URL.createObjectURL(file);
+  img.onload = () => {
+    URL.revokeObjectURL(objectUrl);
+    const maxDim = 800;
+    let w = img.width, h = img.height;
+    if (w > maxDim || h > maxDim) {
+      const ratio = Math.min(maxDim / w, maxDim / h);
+      w = Math.round(w * ratio);
+      h = Math.round(h * ratio);
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+    const compressed = canvas.toDataURL('image/jpeg', 0.75);
+    photosBase64[index] = compressed;
+    const label = input.closest('label');
+    label.style.backgroundImage    = `url(${compressed})`;
+    label.style.backgroundSize     = 'cover';
+    label.style.backgroundPosition = 'center';
+    label.querySelector('svg').style.display  = 'none';
+    label.querySelector('span').style.display = 'none';
+  };
+  img.src = objectUrl;
+}
 
 function renderViewMode(p) {
   document.getElementById('dish-hero').innerHTML = `
@@ -102,42 +140,34 @@ function renderViewMode(p) {
     <h1 class="hero-title">${p.nombre}</h1>
     <div class="hero-meta"><span>${p.descripcion_corta || ''}</span></div>
   `;
-
   const fotos = p.fotos || [];
-  let photoHtml = '';
-  if (fotos.length) {
-    photoHtml = `<div class="photo-gallery">` +
-      fotos.map(url => `<img class="photo-img" src="${url}" alt="${p.nombre}">`).join('') +
-      `</div>`;
-  }
-  document.getElementById('photo-section').innerHTML = photoHtml;
-
+  document.getElementById('photo-section').innerHTML = fotos.length
+    ? `<div class="photo-gallery">${fotos.map(u => `<img class="photo-img" src="${u}" alt="${p.nombre}">`).join('')}</div>`
+    : '';
   document.getElementById('story-section').innerHTML = `
     <div class="section-label" style="margin-bottom:10px">Sobre el plato</div>
     ${p.descripcion ? `<p class="story-text">${p.descripcion.replace(/\n/g,'<br>')}</p>` : ''}
     ${p.cita ? `<div class="pull-quote">"${p.cita}"</div>` : ''}
   `;
-
-  if (p.ingredientes && p.ingredientes.length) {
-    document.getElementById('ing-section').innerHTML = `
-      <div class="section-label" style="margin-bottom:8px">Ingredientes</div>
-      <div class="ing-list">${p.ingredientes.map(i => `<span class="ing-chip">${i}</span>`).join('')}</div>
-    `;
-  } else {
-    document.getElementById('ing-section').innerHTML = '';
-  }
-
-  if (p.origen) {
-    document.getElementById('origin-section').innerHTML = `
-      <div class="origin-card" style="margin-bottom:16px">
-        <div class="origin-label">Origen de la receta</div>
-        <div class="origin-text">${p.origen}</div>
-      </div>
-    `;
-  }
-
+  document.getElementById('ing-section').innerHTML = (p.ingredientes && p.ingredientes.length)
+    ? `<div class="section-label" style="margin-bottom:8px">Ingredientes</div><div class="ing-list">${p.ingredientes.map(i => `<span class="ing-chip">${i}</span>`).join('')}</div>`
+    : '';
+  document.getElementById('origin-section').innerHTML = p.origen
+    ? `<div class="origin-card" style="margin-bottom:16px"><div class="origin-label">Origen de la receta</div><div class="origin-text">${p.origen}</div></div>`
+    : '';
   document.title = `Smachno-Go — ${p.nombre}`;
   document.getElementById('main-content').style.display = 'block';
+}
+
+function photoSlotHtml(idx, label, existing) {
+  const bg   = existing ? `background-image:url('${existing}');background-size:cover;background-position:center` : '';
+  const hide = existing ? 'style="display:none"' : '';
+  return `
+    <label class="photo-upload" style="cursor:pointer;${bg}">
+      <input type="file" accept="image/*" style="display:none" onchange="previewPhoto(this,${idx})">
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none" ${hide}><rect x="1" y="3" width="20" height="16" rx="3" stroke="#7A6E60" stroke-width="1.2"/><circle cx="11" cy="11" r="4" stroke="#7A6E60" stroke-width="1.2"/></svg>
+      <span ${hide}>+ ${label}</span>
+    </label>`;
 }
 
 function renderEditMode(p) {
@@ -146,23 +176,15 @@ function renderEditMode(p) {
     <h1 class="hero-title">${p.nombre}</h1>
     <div class="hero-meta"><span>${p.descripcion_corta || ''}</span></div>
   `;
-
+  const fotos = p.fotos || [];
   document.getElementById('photo-section').innerHTML = `
     <div class="section-label" style="margin-bottom:8px">Fotos del plato</div>
     <div class="photo-gallery">
-      <label class="photo-upload" style="cursor:pointer">
-        <input type="file" accept="image/*" style="display:none" onchange="previewPhoto(this,0)">
-        <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="1" y="3" width="20" height="16" rx="3" stroke="#7A6E60" stroke-width="1.2"/><circle cx="11" cy="11" r="4" stroke="#7A6E60" stroke-width="1.2"/></svg>
-        <span>+ foto principal</span>
-      </label>
-      <label class="photo-upload" style="cursor:pointer">
-        <input type="file" accept="image/*" style="display:none" onchange="previewPhoto(this,1)">
-        <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="1" y="3" width="20" height="16" rx="3" stroke="#7A6E60" stroke-width="1.2"/><circle cx="11" cy="11" r="4" stroke="#7A6E60" stroke-width="1.2"/></svg>
-        <span>+ foto extra</span>
-      </label>
+      ${photoSlotHtml(0, 'foto principal', fotos[0])}
+      ${photoSlotHtml(1, 'foto extra',     fotos[1])}
     </div>
   `;
-
+  const ings = (p.ingredientes || []).join(', ');
   document.getElementById('story-section').innerHTML = `
     <div class="section-label" style="margin-bottom:10px">Descripción del plato</div>
     <span class="edit-label">Subtítulo corto</span>
@@ -174,73 +196,48 @@ function renderEditMode(p) {
     <span class="edit-label">Origen de la receta (opcional)</span>
     <input class="edit-field" id="e-origen" value="${p.origen || ''}">
   `;
-
-  const ings = (p.ingredientes || []).join(', ');
   document.getElementById('ing-section').innerHTML = `
     <div class="section-label" style="margin-bottom:8px">Ingredientes <span style="font-weight:400;color:var(--muted)">(separados por coma)</span></div>
     <input class="edit-field" id="e-ings" value="${ings}" placeholder="Hongos blancos, Crema de leche, Cebolla">
   `;
-
+  document.getElementById('origin-section').innerHTML = '';
   document.getElementById('main-content').style.display = 'block';
 }
 
-let photosBase64 = [];
+const COURSES = ['antipastos', 'primera_mesa', 'segunda_mesa', 'postres'];
 
-function previewPhoto(input, index) {
-  const file = input.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    photosBase64[index] = e.target.result;
-    const label = input.closest('label');
-    label.style.backgroundImage = `url(${e.target.result})`;
-    label.style.backgroundSize = 'cover';
-    label.style.backgroundPosition = 'center';
-    label.querySelector('svg').style.display = 'none';
-    label.querySelector('span').style.display = 'none';
-  };
-  reader.readAsDataURL(file);
-}
-
-document.getElementById('btn-save').onclick = async () => {
-  if (!platoRef) return;
-  const updates = {
-    descripcion_corta: document.getElementById('e-sub')?.value.trim() || '',
-    descripcion:       document.getElementById('e-desc')?.value.trim() || '',
-    cita:              document.getElementById('e-cita')?.value.trim() || '',
-    origen:            document.getElementById('e-origen')?.value.trim() || '',
-    ingredientes: (document.getElementById('e-ings')?.value || '')
-      .split(',').map(s => s.trim()).filter(Boolean),
-  };
-  try {
-    await platoRef.update(updates);
-    alert('¡Guardado!');
-  } catch(e) {
-    alert('Error al guardar: ' + e.message);
-  }
-};
-
-if (eventId && platoNombre) {
-  platoRef = db.ref(`events/${eventId}/menu`);
-  platoRef.once('value', snap => {
-    const menu = snap.val() || {};
-    let found = null;
-    ['primera_ronda','segunda_ronda','postres'].forEach(ronda => {
-      if (!found && menu[ronda]) {
-        const idx = (menu[ronda] || []).findIndex(p => p.nombre === platoNombre);
-        if (idx >= 0) {
-          found = menu[ronda][idx];
-          platoRef = db.ref(`events/${eventId}/menu/${ronda}/${idx}`);
+if (eventId) {
+  if (cursoParam && indiceParam !== null && !isNaN(indiceParam)) {
+    platoRef = db.ref(`events/${eventId}/menu/${cursoParam}/${indiceParam}`);
+    platoRef.once('value', snap => {
+      const p = snap.val();
+      if (!p) {
+        document.getElementById('dish-hero').innerHTML = '<div class="loading" style="color:#F5F0E8;opacity:.5">Plato no encontrado.</div>';
+        return;
+      }
+      platoData = p;
+      isAdmin ? renderEditMode(p) : renderViewMode(p);
+    });
+  } else if (platoNombre) {
+    db.ref(`events/${eventId}/menu`).once('value', snap => {
+      const menu = snap.val() || {};
+      let found = null;
+      for (const course of COURSES) {
+        if (!found && menu[course]) {
+          const idx = menu[course].findIndex(p => p.nombre === platoNombre);
+          if (idx >= 0) {
+            found = menu[course][idx];
+            platoRef = db.ref(`events/${eventId}/menu/${course}/${idx}`);
+          }
         }
       }
+      if (!found) found = { nombre: platoNombre };
+      platoData = found;
+      isAdmin ? renderEditMode(found) : renderViewMode(found);
     });
-    if (!found) found = { nombre: platoNombre };
-    platoData = found;
-    if (isAdmin) {
-      document.getElementById('admin-topbar-btns').style.display = 'flex';
-    }
-    renderViewMode(found); // always start in view mode
-  });
+  } else {
+    document.getElementById('dish-hero').innerHTML = '<div class="loading" style="color:#F5F0E8;opacity:.5">Plato no encontrado.</div>';
+  }
 } else {
   document.getElementById('dish-hero').innerHTML = '<div class="loading" style="color:#F5F0E8;opacity:.5">Plato no encontrado.</div>';
 }
