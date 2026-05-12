@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Smachno-Go — Fiesta gastronómica</title>
   <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>emailjs.init("T7Cky4q-IWy2N2C1J");</script>
 </head>
 <body>
 
@@ -232,6 +234,22 @@ document.getElementById('btn-submit').onclick = async () => {
       alias:  eventData.alias,
     }));
 
+    // Відправка листа гостю
+await emailjs.send("ncobrimark", "template_1j8ho2a", {
+  to_email:       email,
+  nombre:         nombre,
+  apellido:       apellido,
+  event_nombre:   eventData.nombre,
+  event_fecha:    eventData.fecha,
+  event_hora:     eventData.hora,
+  lugares:        String(currentSeats),
+  numero_reserva: numeroReserva,
+  monto_anticipo: String((eventData.anticipo || 0) * currentSeats),
+  banco:          eventData.banco || '',
+  nombre_cuenta:  eventData.nombre_cuenta || '',
+  cvu:            eventData.cvu || '',
+  alias:          eventData.alias || '',
+});
     window.location.href = 'confirmacion.html';
 
   } catch (err) {
